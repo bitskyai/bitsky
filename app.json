@@ -1,0 +1,33 @@
+{
+  "name": "munew",
+  "description": "Make Life Productive. Munew is a fast web crawling, web scraping and automation toolbox",
+  "keywords": [
+    "web crawling",
+    "web scraping",
+    "crawl",
+    "scrape",
+    "automation",
+    "nodejs"
+  ],
+  "website": "https://munew.io",
+  "repository": "https://github.com/munew/dia-engine.git",
+  "logo": "https://raw.githubusercontent.com/munew/dia-electron/master/assets/icons/munew256.png",
+  "env": {
+    "TYPEORM_CONNECTION": {
+      "description": "Database connection type. Currently, available values [sqlite, mongodb].",
+      "value": "sqlite"
+    },
+    "TYPEORM_DATABASE": {
+      "description": "SQLite Database path. By default create a `dia-engine.sql` inside root folder."
+    },
+    "TYPEORM_URL": {
+      "description": "Database connection url where perform connection to."
+    }
+  },
+  "success_url": "/",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
