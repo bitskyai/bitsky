@@ -10,18 +10,20 @@
     "nodejs"
   ],
   "website": "https://munew.io",
-  "repository": "https://github.com/munew/munew-engine-ui.git",
-  "logo": "https://raw.githubusercontent.com/munew/dia-electron/master/assets/icons/munew256.png",
+  "logo": "https://raw.githubusercontent.com/munew/dia-electron/master/assets/icons/munew512.png",
   "env": {
     "TYPEORM_CONNECTION": {
       "description": "Database connection type. Currently, available values [sqlite, mongodb].",
-      "value": "sqlite"
+      "value": "sqlite",
+      "required": false
     },
     "TYPEORM_DATABASE": {
-      "description": "SQLite Database path. By default create a `dia-engine.sql` inside root folder."
+      "description": "SQLite Database path. By default create a `dia-engine.sql` inside root folder.",
+      "required": false
     },
     "TYPEORM_URL": {
-      "description": "Database connection url where perform connection to."
+      "description": "Database connection url where perform connection to.",
+      "required": false
     }
   },
   "success_url": "/",
