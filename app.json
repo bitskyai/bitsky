@@ -10,7 +10,7 @@
     "nodejs"
   ],
   "website": "https://munew.io",
-  "repository": "https://github.com/munew/dia-engine.git",
+  "repository": "https://github.com/munew/munew-engine-ui.git",
   "logo": "https://raw.githubusercontent.com/munew/dia-electron/master/assets/icons/munew256.png",
   "env": {
     "TYPEORM_CONNECTION": {
