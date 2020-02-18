@@ -17,17 +17,14 @@
       "value": "sqlite",
       "required": false
     },
-    "TYPEORM_DATABASE": {
-      "description": "SQLite Database path. By default create a `dia-engine.sql` inside root folder.",
-      "required": false
-    },
     "TYPEORM_URL": {
-      "description": "Database connection url where perform connection to.",
+      "description": "Database connection url where perform connection to. Required when your *TYPEORM_CONNECTION* is *mongodb*.",
       "required": false
     },
     "NPM_CONFIG_PRODUCTION":{
       "description": "Only installing dependencies",
-      "value": true
+      "value": true,
+      "required": false
     }
   },
   "success_url": "/",
