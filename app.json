@@ -23,7 +23,7 @@
     },
     "NPM_CONFIG_PRODUCTION":{
       "description": "Only installing dependencies",
-      "value": true
+      "value": "true"
     }
   },
   "success_url": "/",
