@@ -24,6 +24,10 @@
     "TYPEORM_URL": {
       "description": "Database connection url where perform connection to.",
       "required": false
+    },
+    "NPM_CONFIG_PRODUCTION":{
+      "description": "Only installing dependencies",
+      "value": true
     }
   },
   "success_url": "/",
