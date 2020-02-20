@@ -49,7 +49,7 @@ function getServerInfo() {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     serverInfoRepo = typeorm_1.getRepository(ServerInformation_1.default);
-                    return [4 /*yield*/, serverInfoRepo.find()];
+                    return [4 /*yield*/, serverInfoRepo.find({})];
                 case 1:
                     serverInfo = _a.sent();
                     logger.debug("[getServerInfo], serverInfo: %o", serverInfo);

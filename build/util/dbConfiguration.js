@@ -45,8 +45,11 @@ function getDBConfiguration() {
         else if (configuration.type == constants.DEFAULT_MONGODB.type) {
             dbType = "nosql";
             // https://typeorm.io/#/connection-options/mongodb-connection-options
-            configuration.url = getConfig('TYPEORM_URL');
+            // configuration.url = getConfig('TYPEORM_URL');
             // Following set will overwrite parameters set from URL
+            if (getConfig('TYPEORM_URL')) {
+                configuration.url = getConfig('TYPEORM_URL');
+            }
             if (getConfig('TYPEORM_HOST')) {
                 configuration.host = getConfig('TYPEORM_HOST');
             }
@@ -55,6 +58,12 @@ function getDBConfiguration() {
             }
             if (getConfig('TYPEORM_DATABASE')) {
                 configuration.database = getConfig('TYPEORM_DATABASE');
+            }
+            if (getConfig('TYPEORM_USERNAME')) {
+                configuration.username = getConfig('TYPEORM_USERNAME');
+            }
+            if (getConfig('TYPEORM_PASSWORD')) {
+                configuration.password = getConfig('TYPEORM_PASSWORD');
             }
             configuration.useNewUrlParser = true;
             configuration.useUnifiedTopology = true;
