@@ -151,6 +151,12 @@ var BaseAgent = /** @class */ (function (_super) {
         }),
         __metadata("design:type", String)
     ], BaseAgent.prototype, "system_last_ping", void 0);
+    __decorate([
+        typeorm_1.Column({
+            nullable: true
+        }),
+        __metadata("design:type", String)
+    ], BaseAgent.prototype, "system_serial_id", void 0);
     return BaseAgent;
 }(Base));
 exports.BaseAgent = BaseAgent;

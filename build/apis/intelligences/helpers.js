@@ -43,7 +43,9 @@ var soisHelpers = require("../sois/helpers");
 var agentsHelpers = require("../agents/helpers");
 var logger = require("../../util/logger");
 var utils = require("../../util/utils");
+var getConfig = require('../../config').getConfig;
 var IntelligenceAndHistory_ctrl_1 = require("../../dbController/IntelligenceAndHistory.ctrl");
+var TasksJobQueue_ctrl_1 = require("../../dbController/TasksJobQueue.ctrl");
 // To avoid running check soi status multiple times
 // next check will not be started if previous job doesn't finish
 // TODO: when start thinking about load balance, then this data should be in memory cache, not inside service memory
@@ -72,17 +74,16 @@ function getIntelligencesForManagement(cursor, url, state, limit, securityKey) {
  * @param {array} ids - Intelligences Global Id
  * @param {string} securityKey - security key string
  */
-function pauseIntelligencesForManagement(url, ids, securityKey) {
+function pauseIntelligencesForManagement(url, state, ids, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
         var result, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.paused, url, ids, securityKey)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.paused, url, state, ids, null, securityKey)];
                 case 1:
                     result = _a.sent();
-                    console.log(result);
                     return [2 /*return*/, result];
                 case 2:
                     err_2 = _a.sent();
@@ -98,17 +99,16 @@ function pauseIntelligencesForManagement(url, ids, securityKey) {
  * @param {array} ids - Intelligences Global Id
  * @param {string} securityKey - security key string
  */
-function resumeIntelligencesForManagement(url, ids, securityKey) {
+function resumeIntelligencesForManagement(url, state, ids, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
         var result, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.configured, url, ids, securityKey)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.configured, url, state, ids, null, securityKey)];
                 case 1:
                     result = _a.sent();
-                    console.log(result);
                     return [2 /*return*/, result];
                 case 2:
                     err_3 = _a.sent();
@@ -124,17 +124,16 @@ function resumeIntelligencesForManagement(url, ids, securityKey) {
  * @param {array} ids - Intelligences Global Id
  * @param {string} securityKey - security key string
  */
-function deleteIntelligencesForManagement(url, ids, securityKey) {
+function deleteIntelligencesForManagement(url, state, ids, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
         var result, err_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.deleteIntelligencesOrHistoryForManagementDB(url, state, ids, securityKey)];
                 case 1:
                     result = _a.sent();
-                    console.log(result);
                     return [2 /*return*/, result];
                 case 2:
                     err_4 = _a.sent();
@@ -164,43 +163,49 @@ function addIntelligences(intelligences, securityKey) {
                     soiGlobalIds_1 = {};
                     intelligences = intelligences.map(function (intelligence) {
                         // remove data that cannot set by user
-                        // Comment: 07/30/2019
-                        // delete intelligence.created_at;
-                        // delete intelligence.modified_at;
-                        // delete intelligence.last_collected_at;
-                        // delete intelligence.started_at;
-                        // delete intelligence.ended_at;
-                        // delete intelligence.status;
-                        var err = [];
+                        delete intelligence.dataset;
+                        delete intelligence.system;
+                        // let err = [];
+                        /*
                         if (!intelligence.globalId) {
-                            // comment 07/25/2019 - instead of error, generate an globalid
-                            // err.push({
-                            //   key: "globalId",
-                            //   description: "globalId is undefined."
-                            // });
-                            intelligence.globalId = utils.generateGlobalId("intelligence");
-                            // To avoid same intelligence insert multiple time
-                            intelligence._id = intelligence.globalId;
+                          // comment 07/25/2019 - instead of error, generate an globalid
+                          // err.push({
+                          //   key: "globalId",
+                          //   description: "globalId is undefined."
+                          // });
+                          intelligence.globalId = utils.generateGlobalId("intelligence");
+                          // To avoid same intelligence insert multiple time
+                          intelligence._id = intelligence.globalId;
                         }
+                        */
+                        intelligence.globalId = utils.generateGlobalId("intelligence");
                         intelligence = _.merge({}, defaultIntelligence_1, intelligence);
                         // Update system information
                         intelligence.system.created = Date.now();
                         intelligence.system.modified = Date.now();
                         intelligence.system.securityKey = securityKey;
+                        intelligence.system.state = AGENT_STATE.configured;
                         // Make sure agent type is uppercase
                         intelligence.suitableAgents = intelligence.suitableAgents.map(function (agentType) {
                             return _.toUpper(agentType);
                         });
                         // since just recieve SOI request, so set the state to **ACTIVE**
-                        intelligence.soi.state = SOI_STATE.active;
+                        if (!intelligence.soi.state) {
+                            intelligence.soi.state = SOI_STATE.active;
+                        }
                         var validateResult = utils.validateIntelligence(intelligence);
                         // If it isn't valid
                         if (!validateResult.valid) {
                             validationError_1.push({
                                 intelligence: intelligence,
-                                error: validateResult.errors
+                                error: validateResult.errors,
                             });
                         }
+                        // remove unchangable field for create
+                        delete intelligence.system.agent;
+                        delete intelligence.system.startedAt;
+                        delete intelligence.system.endedAt;
+                        delete intelligence.system.failuresNumber;
                         // Need to update globalId to globalId
                         soiGlobalIds_1[intelligence.soi.globalId] = 1;
                         return intelligence;
@@ -237,6 +242,58 @@ function addIntelligences(intelligences, securityKey) {
         });
     });
 }
+function waitUntilTopTask(globalId) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _this = this;
+        return __generator(this, function (_a) {
+            try {
+                return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+                        var startTime, taskJobTimeout, waitHandler;
+                        var _this = this;
+                        return __generator(this, function (_a) {
+                            startTime = Date.now();
+                            taskJobTimeout = getConfig("TASK_JOB_TIMEOUT");
+                            waitHandler = setInterval(function () { return __awaiter(_this, void 0, void 0, function () {
+                                var job;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, TasksJobQueue_ctrl_1.getTopTaskJob()];
+                                        case 1:
+                                            job = _a.sent();
+                                            if (!job || !job.global_id) {
+                                                // this means all jobs are timeout, but this agent is still waiting
+                                                // normally this happend the intervalAgendas removeTimeoutTaskJob
+                                                logger.info("No job in the queue, this happened because intervalAgendas removeTimeoutTaskJob", { function: 'waitUntilTopTask' });
+                                                clearInterval(waitHandler);
+                                                reject(false);
+                                                return [2 /*return*/];
+                                            }
+                                            logger.debug("Top GlobalId in job queue:" + job.global_id + ", globalId: " + globalId, { function: 'waitUntilTopTask' });
+                                            if (job.global_id == globalId) {
+                                                logger.debug(globalId + " is top job now", { function: 'waitUntilTopTask' });
+                                                clearInterval(waitHandler);
+                                                resolve(true);
+                                            }
+                                            else if ((Date.now() - startTime) > taskJobTimeout) {
+                                                logger.error(globalId + " is timeout", { function: 'waitUntilTopTask' });
+                                                clearInterval(waitHandler);
+                                                reject(false);
+                                            }
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }, 100);
+                            return [2 /*return*/];
+                        });
+                    }); })];
+            }
+            catch (err) {
+                throw err;
+            }
+            return [2 /*return*/];
+        });
+    });
+}
 /**
  * @typedef {Object} IntelligencesAndConfig
  * @property {object} agent - Agent Configuration
@@ -254,34 +311,48 @@ function addIntelligences(intelligences, securityKey) {
  */
 function getIntelligences(agentGid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var agentConfig, agentSecurityKey, intelligences, err_6;
+        var taskJobGlobalId, agentConfig, agentSecurityKey, intelligences, err_6;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 3, , 4]);
+                    taskJobGlobalId = utils.generateGlobalId("taskjob");
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 7, , 9]);
+                    // add a task job to the job queue
+                    return [4 /*yield*/, TasksJobQueue_ctrl_1.addATaskJob(taskJobGlobalId, agentGid)];
+                case 2:
+                    // add a task job to the job queue
+                    _a.sent();
+                    return [4 /*yield*/, waitUntilTopTask(taskJobGlobalId)];
+                case 3:
+                    _a.sent();
                     // TODO: need to improve intelligences schedule
                     // 1. Think about if a lot of intelligences, how to schedule them
                     // make them can be more efficient
                     // 2. Think about the case that SOI is inactive
                     // avoid UI side send undefined or null as string
-                    if (securityKey === 'undefined' || securityKey === 'null') {
+                    if (securityKey === "undefined" || securityKey === "null") {
                         securityKey = undefined;
                     }
-                    logger.debug('getIntelligences->agentGid: %s', agentGid);
-                    logger.debug('getIntelligences->securityKey: %s', securityKey);
-                    return [4 /*yield*/, agentsHelpers.getAgent(agentGid)];
-                case 1:
+                    logger.debug("getIntelligences->agentGid: " + agentGid);
+                    logger.debug("getIntelligences->securityKey: " + securityKey);
+                    return [4 /*yield*/, agentsHelpers.getAgent(agentGid, securityKey)];
+                case 4:
                     agentConfig = _a.sent();
-                    logger.debug('getIntelligences->agentConfig.system.securityKey: %s', agentConfig.system.securityKey);
+                    logger.debug("getIntelligences->agentConfig.system.securityKey: " + agentConfig.system.securityKey);
                     agentSecurityKey = agentConfig.system.securityKey;
                     // avoid UI side send undefined or null as string
-                    if (agentSecurityKey === 'undefined' || agentSecurityKey === 'null') {
+                    if (agentSecurityKey === "undefined" || agentSecurityKey === "null") {
                         agentSecurityKey = undefined;
                     }
                     // If security key doesn't match, then we assume this agnet doesn't belong to this user
                     // For security issue, don't allow user do this
                     if (_.trim(agentSecurityKey) !== _.trim(securityKey)) {
-                        logger.info('getIntelligences, agentConfig.system.securityKey isn\' same with securityKey. ', { 'agentConfig.system.securityKey': agentSecurityKey, securityKey: securityKey });
+                        logger.info("getIntelligences, agentConfig.system.securityKey isn' same with securityKey. ", {
+                            "agentConfig.system.securityKey": agentSecurityKey,
+                            securityKey: securityKey,
+                        });
                         throw new HTTPError(400, null, { agentGlobalId: agentGid, securityKey: securityKey }, "00054000001", agentGid, securityKey);
                     }
                     intelligences = [];
@@ -289,17 +360,23 @@ function getIntelligences(agentGid, securityKey) {
                     // if agent isn't active, then throw an error
                     if (_.toUpper(agentConfig.system.state) !== _.toUpper(AGENT_STATE.active)) {
                         throw new HTTPError(400, null, {
-                            agent: agentConfig
+                            agent: agentConfig,
                         }, "00054000002", agentGid);
                     }
                     return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.getIntelligencesForAgentDB(agentConfig, securityKey)];
-                case 2:
+                case 5:
                     intelligences = _a.sent();
+                    return [4 /*yield*/, TasksJobQueue_ctrl_1.removeTaskJob(taskJobGlobalId)];
+                case 6:
+                    _a.sent();
                     return [2 /*return*/, intelligences];
-                case 3:
+                case 7:
                     err_6 = _a.sent();
+                    return [4 /*yield*/, TasksJobQueue_ctrl_1.removeTaskJob(taskJobGlobalId)];
+                case 8:
+                    _a.sent();
                     throw err_6;
-                case 4: return [2 /*return*/];
+                case 9: return [2 /*return*/];
             }
         });
     });
@@ -311,7 +388,6 @@ function updateIntelligences(content, securityKey) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 6, , 7]);
-                    console.log("updateIntelligences -> content: ", content);
                     contentMap_1 = {};
                     gids = content.map(function (item) {
                         contentMap_1[item.globalId] = item;
@@ -333,7 +409,9 @@ function updateIntelligences(content, securityKey) {
                         // If this intelligence was failed, then increase **failuresNumber**
                         // Any state isn't FINISHED, then think it is failed, need to increase failuresNumber
                         // if failuresNumber is <= max fail number, then let Agent try to collect it again
-                        if ((item.system.failuresNumber || 0) < CONFIG.MAX_FAIL_NUMBER_FOR_INTELLIGENCE && _.get(intelligence, "system.state") !== INTELLIGENCE_STATE.finished) {
+                        if ((item.system.failuresNumber || 0) <
+                            CONFIG.MAX_FAIL_NUMBER_FOR_INTELLIGENCE &&
+                            _.get(intelligence, "system.state") !== INTELLIGENCE_STATE.finished) {
                             if (!item.system.failuresNumber) {
                                 item.system.failuresNumber = 1;
                             }
@@ -346,16 +424,16 @@ function updateIntelligences(content, securityKey) {
                                 system: {
                                     modified: Date.now(),
                                     endedAt: Date.now(),
-                                    state: _.get(intelligence, 'system.state') || INTELLIGENCE_STATE.failed,
+                                    state: _.get(intelligence, "system.state") || INTELLIGENCE_STATE.failed,
                                     failuresNumber: _.get(item, "system.failuresNumber"),
-                                    failuresReason: _.get(intelligence, 'system.failuresReason'),
+                                    failuresReason: _.get(intelligence, "system.failuresReason"),
                                     agent: {
-                                        globalId: _.get(intelligence, 'system.agent.globalId'),
-                                        type: _.get(intelligence, 'system.agent.type'),
-                                        startedAt: _.get(intelligence, 'system.agent.startedAt'),
-                                        endedAt: _.get(intelligence, 'system.agent.endedAt')
-                                    }
-                                }
+                                        globalId: _.get(intelligence, "system.agent.globalId"),
+                                        type: _.get(intelligence, "system.agent.type"),
+                                        startedAt: _.get(intelligence, "system.agent.startedAt"),
+                                        endedAt: _.get(intelligence, "system.agent.endedAt"),
+                                    },
+                                },
                             });
                         }
                         else {
@@ -366,7 +444,7 @@ function updateIntelligences(content, securityKey) {
                             // if it's successful, then means reach max retry time, to keep why it isn't successful
                             if (_.get(intelligence, "system.state") !== INTELLIGENCE_STATE.finished) {
                                 item.system.failuresNumber += 1;
-                                item.system.failuresReason = _.get(intelligence, 'system.failuresReason');
+                                item.system.failuresReason = _.get(intelligence, "system.failuresReason");
                             }
                             item.system.modified = Date.now();
                             item.system.endedAt = Date.now();
@@ -414,5 +492,5 @@ module.exports = {
     getIntelligencesForManagement: getIntelligencesForManagement,
     addIntelligences: addIntelligences,
     getIntelligences: getIntelligences,
-    updateIntelligences: updateIntelligences
+    updateIntelligences: updateIntelligences,
 };

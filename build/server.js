@@ -93,7 +93,7 @@ function startServer(customConfig) {
                         server.destroy();
                     });
                     server.on("close", function () {
-                        logger_1.info("Server closed");
+                        logger_1.info("Engine Server closed");
                         // process.emit("cleanup");
                         logger_1.info("Giving 100ms time to cleanup..");
                         // Give a small time frame to clean up

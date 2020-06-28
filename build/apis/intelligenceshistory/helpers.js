@@ -40,6 +40,8 @@ var _ = require("lodash");
 var HTTPError = require("../../util/error").HTTPError;
 var logger = require("../../util/logger");
 var IntelligenceAndHistory_ctrl_1 = require("../../dbController/IntelligenceAndHistory.ctrl");
+var addIntelligences = require("../intelligences/helpers").addIntelligences;
+var helpers_1 = require("../sois/helpers");
 //================================================================
 // Following APIs are designed for CRUD intelligences
 function getIntelligencesHistoryForManagement(cursor, url, state, limit, securityKey) {
@@ -65,14 +67,14 @@ function getIntelligencesHistoryForManagement(cursor, url, state, limit, securit
  * @param {array} ids - Intelligences Global Id
  * @param {string} securityKey - security key string
  */
-function deleteIntelligencesHistoryForManagement(url, ids, securityKey) {
+function deleteIntelligencesHistoryForManagement(url, state, ids, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
         var result, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey, true)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.deleteIntelligencesOrHistoryForManagementDB(url, state, ids, securityKey, true)];
                 case 1:
                     result = _a.sent();
                     return [2 /*return*/, result];
@@ -84,7 +86,64 @@ function deleteIntelligencesHistoryForManagement(url, ids, securityKey) {
         });
     });
 }
+/**
+ * ids priority high then url, if you pass both then only ids will be executed
+ * @param {string} url - url for filter
+ * @param {array} ids - Intelligences Global Id
+ * @param {string} securityKey - security key string
+ */
+function rerunIntelligencesForManagement(url, state, ids, securityKey) {
+    return __awaiter(this, void 0, void 0, function () {
+        var result, soisState, intelligences, i, soiId, soi, err_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 8, , 9]);
+                    logger.info("url: " + url + ", state: " + state + ", ids: " + ids, {
+                        function: "rerunIntelligencesForManagement",
+                    });
+                    console.log("url: " + url + ", state: " + state + ", ids: " + ids);
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.getIntelligencesOrHistoryForManagementDB(null, url, state, 1000000, securityKey, true, ids)];
+                case 1:
+                    result = _a.sent();
+                    logger.debug("Total Intelligences: " + result.total, {
+                        function: "rerunIntelligencesForManagement",
+                    });
+                    soisState = {};
+                    intelligences = result.intelligences;
+                    i = 0;
+                    _a.label = 2;
+                case 2:
+                    if (!(i < intelligences.length)) return [3 /*break*/, 6];
+                    soiId = intelligences[i].soi.globalId;
+                    if (!!soisState[soiId]) return [3 /*break*/, 4];
+                    return [4 /*yield*/, helpers_1.getSOI(soiId, securityKey)];
+                case 3:
+                    soi = _a.sent();
+                    soisState[soiId] = soi.system.state;
+                    _a.label = 4;
+                case 4:
+                    intelligences[i].soi.state = soisState[soiId];
+                    _a.label = 5;
+                case 5:
+                    i++;
+                    return [3 /*break*/, 2];
+                case 6: return [4 /*yield*/, addIntelligences(intelligences, securityKey)];
+                case 7:
+                    _a.sent();
+                    return [2 /*return*/, {
+                            total: result.total,
+                        }];
+                case 8:
+                    err_3 = _a.sent();
+                    throw err_3;
+                case 9: return [2 /*return*/];
+            }
+        });
+    });
+}
 module.exports = {
     deleteIntelligencesHistoryForManagement: deleteIntelligencesHistoryForManagement,
     getIntelligencesHistoryForManagement: getIntelligencesHistoryForManagement,
+    rerunIntelligencesForManagement: rerunIntelligencesForManagement,
 };

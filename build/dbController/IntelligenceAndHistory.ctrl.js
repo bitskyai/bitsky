@@ -303,7 +303,7 @@ function addIntelligencesDB(intelligences) {
     });
 }
 exports.addIntelligencesDB = addIntelligencesDB;
-function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, securityKey, history) {
+function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, securityKey, history, ids) {
     return __awaiter(this, void 0, void 0, function () {
         var modified, id, intelligences, total, repoName, parseCursor, query, repo, nQuery, intelligenceQuery, andWhere, funName, funName, states, funName, parseCursor, funName, lastItem, nextCursor, err_2, error;
         return __generator(this, function (_a) {
@@ -331,12 +331,17 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                     }
                     if (url) {
                         query.url = {
-                            $regex: utils.convertStringToRegExp(url)
+                            $regex: utils.convertStringToRegExp(url),
                         };
                     }
                     if (state) {
                         query["system_state"] = {
-                            $in: state.split(",")
+                            $in: state.split(","),
+                        };
+                    }
+                    if (ids && ids.length) {
+                        query.global_id = {
+                            $in: ids,
                         };
                     }
                     return [4 /*yield*/, typeorm_1.getMongoRepository(repoName)];
@@ -346,28 +351,30 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                 case 2:
                     total = _a.sent();
                     nQuery = {
-                        where: query
+                        where: query,
                     };
                     if (modified && id) {
                         nQuery.where.$or = [
                             {
                                 system_modified_at: {
-                                    $lt: modified * 1
-                                }
+                                    $lt: modified * 1,
+                                },
                             },
                             // If the "sytem.modified" is an exact match, we need a tiebreaker, so we use the _id field from the cursor.
                             {
                                 system_modified_at: modified * 1,
                                 _id: {
-                                    $lt: ObjectId(id)
-                                }
-                            }
+                                    $lt: ObjectId(id),
+                                },
+                            },
                         ];
                     }
-                    nQuery.take = limit || 50;
+                    if (limit) {
+                        nQuery.take = limit;
+                    }
                     nQuery.order = {
                         system_modified_at: "DESC",
-                        _id: "DESC"
+                        _id: "DESC",
                     };
                     return [4 /*yield*/, repo.find(nQuery)];
                 case 3:
@@ -398,7 +405,7 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                             andWhere = true;
                         }
                         intelligenceQuery[funName]("intelligence.url LIKE :url", {
-                            url: "%" + url + "%"
+                            url: "%" + url + "%",
                         });
                     }
                     if (state) {
@@ -412,7 +419,12 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                             andWhere = true;
                         }
                         intelligenceQuery[funName]("intelligence.system_state IN (:...states)", {
-                            states: states
+                            states: states,
+                        });
+                    }
+                    if (ids && ids.length) {
+                        intelligenceQuery.where("intelligence.global_id IN (:...ids)", {
+                            ids: ids,
                         });
                     }
                     return [4 /*yield*/, intelligenceQuery.getCount()];
@@ -458,7 +470,7 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                             previousCursor: cursor,
                             nextCursor: nextCursor,
                             intelligences: flattenToObject(intelligences),
-                            total: total
+                            total: total,
                         }];
                 case 9:
                     err_2 = _a.sent();
@@ -486,13 +498,13 @@ function updateIntelligencesSOIStateForManagementDB(soiGID, state) {
                     repo = _a.sent();
                     query = {};
                     query.soi_global_id = {
-                        $eq: soiGID
+                        $eq: soiGID,
                     };
                     return [4 /*yield*/, repo.updateMany(query, {
                             $set: {
                                 system_modified_at: Date.now(),
-                                soi_state: state
-                            }
+                                soi_state: state,
+                            },
                         })];
                 case 2: 
                 // update SOI state and modified_at
@@ -500,14 +512,14 @@ function updateIntelligencesSOIStateForManagementDB(soiGID, state) {
                 case 3:
                     updateData = {
                         system_modified_at: Date.now(),
-                        soi_state: state
+                        soi_state: state,
                     };
                     return [4 /*yield*/, typeorm_1.getRepository(Intelligence_1.default)
                             .createQueryBuilder("intelligence")
                             .update(Intelligence_1.default)
                             .set(updateData)
                             .where("intelligence.soi_global_id = :id", {
-                            id: soiGID
+                            id: soiGID,
                         })];
                 case 4:
                     intelligenceQuery = _a.sent();
@@ -525,93 +537,125 @@ function updateIntelligencesSOIStateForManagementDB(soiGID, state) {
     });
 }
 exports.updateIntelligencesSOIStateForManagementDB = updateIntelligencesSOIStateForManagementDB;
-function updateIntelligencesStateForManagementDB(state, url, ids, securityKey) {
+function updateIntelligencesStateForManagementDB(state, url, selectedState, ids, timeoutStartedAt, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var states, repo, query, intelligenceQuery, err_4, error;
+        var states, repo, query, mongoDBUdpateData, intelligenceQuery, sqlUpdateData, err_4, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 7, , 8]);
+                    _a.trys.push([0, 6, , 7]);
                     state = _.toUpper(state);
-                    states = [INTELLIGENCE_STATE.draft];
-                    if (state === INTELLIGENCE_STATE.configured) {
-                        states = [INTELLIGENCE_STATE.running, INTELLIGENCE_STATE.draft];
+                    states = [INTELLIGENCE_STATE.draft, state];
+                    if (state === INTELLIGENCE_STATE.configured || state === INTELLIGENCE_STATE.paused) {
+                        states.push(INTELLIGENCE_STATE.running);
                     }
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
                     return [4 /*yield*/, typeorm_1.getMongoRepository(Intelligence_1.default)];
                 case 1:
                     repo = _a.sent();
                     query = {};
-                    // Don't Running or Draft intelligences
+                    mongoDBUdpateData = {
+                        $set: {
+                            system_modified_at: Date.now(),
+                            system_state: state,
+                        },
+                    };
                     query.system_state = {
-                        $nin: states
+                        $nin: states,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
                     }
                     if (ids && ids.length) {
                         query.global_id = {
-                            $in: ids
+                            $in: ids,
                         };
                     }
-                    else {
-                        if (url) {
-                            query.url = {
-                                $regex: utils.convertStringToRegExp(url)
-                            };
-                        }
+                    if (selectedState) {
+                        query["system_state"] = {
+                            $in: selectedState.split(","),
+                        };
                     }
-                    return [4 /*yield*/, repo.updateMany(query, {
-                            $set: {
-                                system_modified_at: Date.now(),
-                                system_state: state
-                            }
-                        })];
+                    if (url) {
+                        query.url = {
+                            $regex: utils.convertStringToRegExp(url),
+                        };
+                    }
+                    // any value less than `startedAt`, it will set to timeout, whatever what state you pass
+                    if (timeoutStartedAt) {
+                        // Only timeout currently is in  `RUNNING` state, other state don't need timeout
+                        query.system_state.$in = [INTELLIGENCE_STATE.running];
+                        query.system_started_at = {
+                            $lt: timeoutStartedAt,
+                        };
+                        mongoDBUdpateData.$set.system_agent_ended_at = Date.now();
+                        mongoDBUdpateData.$set.system_ended_at = Date.now();
+                        mongoDBUdpateData.$set.system_state = INTELLIGENCE_STATE.timeout;
+                        mongoDBUdpateData.$set.system_failures_reason =
+                            "Agent collect intelligence timeout. Engine automatically set to TIMEOUT status";
+                        // Since this is set by system, so don't auto increase fail number
+                        // Actually, it isn't easy to auto increase `system_failures_number` ^_^
+                    }
+                    return [4 /*yield*/, repo.updateMany(query, mongoDBUdpateData)];
                 case 2: return [2 /*return*/, _a.sent()];
-                case 3: return [4 /*yield*/, typeorm_1.getRepository(Intelligence_1.default)
+                case 3:
+                    intelligenceQuery = typeorm_1.getRepository(Intelligence_1.default)
                         .createQueryBuilder("intelligence")
-                        .update(Intelligence_1.default)
-                        .set({
+                        .update(Intelligence_1.default);
+                    sqlUpdateData = {
                         system_modified_at: function () { return Date.now().toString(); },
-                        system_state: state
-                    })];
-                case 4:
-                    intelligenceQuery = _a.sent();
+                        system_state: state,
+                    };
                     intelligenceQuery.where("intelligence.system_state NOT IN (:...states)", {
-                        states: states
+                        states: states,
                     });
                     if (securityKey) {
                         intelligenceQuery.andWhere("intelligence.system_security_key = :securityKey", { securityKey: securityKey });
                     }
                     if (ids && ids.length) {
-                        intelligenceQuery.where("intelligence.global_id IN (:...ids)", {
-                            ids: ids
+                        intelligenceQuery.andWhere("intelligence.global_id IN (:...ids)", {
+                            ids: ids,
                         });
                     }
-                    else {
-                        if (url) {
-                            intelligenceQuery.andWhere("intelligence.url LIKE :url", {
-                                url: "%" + url + "%"
-                            });
-                        }
+                    if (url) {
+                        intelligenceQuery.andWhere("intelligence.url LIKE :url", {
+                            url: "%" + url + "%",
+                        });
                     }
+                    if (selectedState) {
+                        intelligenceQuery.andWhere("intelligence.system_state IN (:...selectedState)", {
+                            selectedState: selectedState.split(",")
+                        });
+                    }
+                    if (timeoutStartedAt) {
+                        intelligenceQuery.andWhere("intelligence.system_started_at < :timeoutStartedAt", { timeoutStartedAt: timeoutStartedAt });
+                        intelligenceQuery.andWhere("intelligence.system_state IN (:...requiredStates)", {
+                            requiredStates: [INTELLIGENCE_STATE.running],
+                        });
+                        sqlUpdateData.system_agent_ended_at = Date.now();
+                        sqlUpdateData.system_ended_at = Date.now();
+                        sqlUpdateData.system_state = INTELLIGENCE_STATE.timeout;
+                        sqlUpdateData.system_failures_reason =
+                            "Agent collect intelligence timeout. Engine automatically set to TIMEOUT status";
+                    }
+                    intelligenceQuery.set(sqlUpdateData);
                     return [4 /*yield*/, intelligenceQuery.execute()];
-                case 5: return [2 /*return*/, _a.sent()];
-                case 6: return [3 /*break*/, 8];
-                case 7:
+                case 4: return [2 /*return*/, _a.sent()];
+                case 5: return [3 /*break*/, 7];
+                case 6:
                     err_4 = _a.sent();
                     error = new HTTPError(500, err_4, {}, "00005000001", "IntelligenceAndHistory.ctrl->updateIntelligencesStateForManagementDB");
-                    logger.error("updateIntelligencesStateForManagementDB, error:", error);
+                    logger.error("updateIntelligencesStateForManagementDB, error: " + error.message, { error: error });
                     throw error;
-                case 8: return [2 /*return*/];
+                case 7: return [2 /*return*/];
             }
         });
     });
 }
 exports.updateIntelligencesStateForManagementDB = updateIntelligencesStateForManagementDB;
-function deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey, history) {
+function deleteIntelligencesOrHistoryForManagementDB(url, selectedState, ids, securityKey, history) {
     return __awaiter(this, void 0, void 0, function () {
-        var repoName, repo, query, intelligenceQuery, andWhere, funName, funName, funName, err_5, error;
+        var repoName, repo, query, intelligenceQuery, andWhere, funName, funName, funName, funName, err_5, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -628,17 +672,20 @@ function deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey, hist
                     if (securityKey) {
                         query.system_security_key = securityKey;
                     }
-                    if (ids && ids.length) {
-                        query.global_id = {
-                            $in: ids
+                    if (selectedState) {
+                        query["system_state"] = {
+                            $in: selectedState.split(","),
                         };
                     }
-                    else {
-                        if (url) {
-                            query.url = {
-                                $regex: utils.convertStringToRegExp(url)
-                            };
-                        }
+                    if (ids && ids.length) {
+                        query.global_id = {
+                            $in: ids,
+                        };
+                    }
+                    if (url) {
+                        query.url = {
+                            $regex: utils.convertStringToRegExp(url),
+                        };
                     }
                     return [4 /*yield*/, repo.deleteMany(query)];
                 case 2: return [2 /*return*/, _a.sent()];
@@ -662,7 +709,7 @@ function deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey, hist
                             andWhere = true;
                         }
                         intelligenceQuery[funName]("system_security_key = :securityKey", {
-                            securityKey: securityKey
+                            securityKey: securityKey,
                         });
                     }
                     if (ids && ids.length) {
@@ -675,23 +722,34 @@ function deleteIntelligencesOrHistoryForManagementDB(url, ids, securityKey, hist
                             andWhere = true;
                         }
                         intelligenceQuery[funName]("global_id IN (:...ids)", {
-                            ids: ids
+                            ids: ids,
                         });
                     }
-                    else {
-                        if (url) {
-                            funName = void 0;
-                            if (andWhere) {
-                                funName = "andWhere";
-                            }
-                            else {
-                                funName = "where";
-                                andWhere = true;
-                            }
-                            intelligenceQuery[funName]("url LIKE :url", {
-                                url: "%" + url + "%"
-                            });
+                    if (url) {
+                        funName = void 0;
+                        if (andWhere) {
+                            funName = "andWhere";
                         }
+                        else {
+                            funName = "where";
+                            andWhere = true;
+                        }
+                        intelligenceQuery[funName]("url LIKE :url", {
+                            url: "%" + url + "%",
+                        });
+                    }
+                    if (selectedState) {
+                        funName = void 0;
+                        if (andWhere) {
+                            funName = "andWhere";
+                        }
+                        else {
+                            funName = "where";
+                            andWhere = true;
+                        }
+                        intelligenceQuery[funName]("intelligence.system_state IN (:...states)", {
+                            states: selectedState.split(",")
+                        });
                     }
                     return [4 /*yield*/, intelligenceQuery.execute()];
                 case 5: return [2 /*return*/, _a.sent()];
@@ -723,7 +781,7 @@ function deleteIntelligencesBySOIForManagementDB(soiGID, securityKey) {
                         query.system_security_key = securityKey;
                     }
                     query.soi_global_id = {
-                        $in: [soiGID]
+                        $in: [soiGID],
                     };
                     return [4 /*yield*/, repo.deleteMany(query)];
                 case 2: return [2 /*return*/, _a.sent()];
@@ -732,7 +790,7 @@ function deleteIntelligencesBySOIForManagementDB(soiGID, securityKey) {
                         .delete()
                         .from(Intelligence_1.default)
                         .where("intelligence.soi_global_id = :id", {
-                        id: soiGID
+                        id: soiGID,
                     })];
                 case 4:
                     intelligenceQuery = _a.sent();
@@ -776,28 +834,28 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                 case 1:
                     repo = _a.sent();
                     query = {
-                        where: {}
+                        where: {},
                     };
                     query.where.system_state = {
                         $nin: [
                             INTELLIGENCE_STATE.draft,
                             INTELLIGENCE_STATE.running,
                             INTELLIGENCE_STATE.finished,
-                            INTELLIGENCE_STATE.paused
-                        ]
+                            INTELLIGENCE_STATE.paused,
+                        ],
                     };
                     query.where.soi_state = {
-                        $eq: SOI_STATE.active
+                        $eq: SOI_STATE.active,
                     };
                     query.where.suitable_agents = {
                         $elemMatch: {
-                            $eq: _.toUpper(agentConfig.type)
-                        }
+                            $eq: _.toUpper(agentConfig.type),
+                        },
                     };
                     query.take = concurrent;
                     query.order = {
                         soi_global_id: "DESC",
-                        priority: "ASC"
+                        priority: "ASC",
                     };
                     if (!securityKey) return [3 /*break*/, 5];
                     query.where.system_security_key = securityKey;
@@ -809,7 +867,7 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                     // if no intelligences for this securityKey and if this agent's permission is public then, get other intelligences that is public
                     delete query.where.system_security_key;
                     query.where.permission = {
-                        $nin: [PERMISSIONS.private]
+                        $nin: [PERMISSIONS.private],
                     };
                     return [4 /*yield*/, repo.find(query)];
                 case 3:
@@ -834,16 +892,16 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                             INTELLIGENCE_STATE.draft,
                             INTELLIGENCE_STATE.running,
                             INTELLIGENCE_STATE.finished,
-                            INTELLIGENCE_STATE.paused
-                        ]
+                            INTELLIGENCE_STATE.paused,
+                        ],
                     });
                     intelligenceQuery.andWhere("intelligence.soi_state = :state", {
-                        state: SOI_STATE.active
+                        state: SOI_STATE.active,
                     });
                     intelligenceQuery.andWhere("intelligence.suitable_agents LIKE :agentType", { agentType: "%" + _.toUpper(agentConfig.type) + "%" });
                     intelligenceQuery.orderBy({
                         soi_global_id: "DESC",
-                        priority: "ASC"
+                        priority: "ASC",
                     });
                     intelligenceQuery.limit(concurrent);
                     intelligenceQueryNoSecurityKey.where("intelligence.system_state NOT IN (:...states)", {
@@ -851,16 +909,16 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                             INTELLIGENCE_STATE.draft,
                             INTELLIGENCE_STATE.running,
                             INTELLIGENCE_STATE.finished,
-                            INTELLIGENCE_STATE.paused
-                        ]
+                            INTELLIGENCE_STATE.paused,
+                        ],
                     });
                     intelligenceQueryNoSecurityKey.andWhere("intelligence.soi_state = :state", {
-                        state: SOI_STATE.active
+                        state: SOI_STATE.active,
                     });
                     intelligenceQueryNoSecurityKey.andWhere("intelligence.suitable_agents LIKE :agentType", { agentType: "%" + _.toUpper(agentConfig.type) + "%" });
                     intelligenceQueryNoSecurityKey.orderBy({
                         soi_global_id: "DESC",
-                        priority: "ASC"
+                        priority: "ASC",
                     });
                     intelligenceQueryNoSecurityKey.limit(concurrent);
                     if (!securityKey) return [3 /*break*/, 14];
@@ -872,7 +930,7 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                         (!intelligences || !intelligences.length))) return [3 /*break*/, 13];
                     // if no intelligences for this securityKey and if this agent's permission is public then, get other intelligences that is public
                     intelligenceQueryNoSecurityKey.andWhere("intelligence.permission NOT IN (:...permissions)", {
-                        permissions: [PERMISSIONS.private]
+                        permissions: [PERMISSIONS.private],
                     });
                     return [4 /*yield*/, intelligenceQueryNoSecurityKey.getMany()];
                 case 12:
@@ -919,7 +977,7 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                     // }
                     item.system.agent = {
                         globalId: agentConfig.globalId,
-                        type: _.toUpper(agentConfig.type)
+                        type: _.toUpper(agentConfig.type),
                     };
                     _a.label = 21;
                 case 21:
@@ -932,16 +990,16 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                         system_modified_at: Date.now(),
                         system_state: INTELLIGENCE_STATE.running,
                         system_agent_global_id: agentConfig.globalId,
-                        system_agent_type: _.toUpper(agentConfig.type)
+                        system_agent_type: _.toUpper(agentConfig.type),
                     };
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 24];
                     // Update intelligences that return to agent
                     return [4 /*yield*/, repo.updateMany({
                             global_id: {
-                                $in: gids
-                            }
+                                $in: gids,
+                            },
                         }, {
-                            $set: updateData
+                            $set: updateData,
                         })];
                 case 23:
                     // Update intelligences that return to agent
@@ -954,7 +1012,7 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                 case 25:
                     query = _a.sent();
                     query.where("intelligence.global_id IN (:...gids)", {
-                        gids: gids
+                        gids: gids,
                     });
                     return [4 /*yield*/, query.execute()];
                 case 26:
@@ -966,8 +1024,8 @@ function getIntelligencesForAgentDB(agentConfig, securityKey) {
                     Agent_ctrl_1.updateAgentDB(agentConfig.globalId, securityKey, {
                         system: {
                             modified: Date.now(),
-                            lastPing: Date.now()
-                        }
+                            lastPing: Date.now(),
+                        },
                     });
                     // TODO: 2019/11/10 need to rethink about this logic, since intelligences already send back to agents
                     //        if we check for now, it is meaningless, better way is let agent to tell. For example, if collect
@@ -1016,13 +1074,13 @@ function getIntelligencesDB(gids, securityKey) {
                     }
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
                     query = {
-                        where: {}
+                        where: {},
                     };
                     if (securityKey) {
                         query.where["system_security_key"] = securityKey;
                     }
                     query.where.global_id = {
-                        $in: gids
+                        $in: gids,
                     };
                     return [4 /*yield*/, typeorm_1.getMongoRepository(Intelligence_1.default)];
                 case 1:
@@ -1062,33 +1120,31 @@ function deleteIntelligencesDB(gids, securityKey) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 6, , 7]);
-                    if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
+                    _a.trys.push([0, 5, , 6]);
+                    if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 2];
                     query = {};
                     if (securityKey) {
                         query.system_security_key = securityKey;
                     }
                     query.global_id = {
-                        $in: gids
+                        $in: gids,
                     };
-                    return [4 /*yield*/, typeorm_1.getMongoRepository(Intelligence_1.default)];
-                case 1:
-                    repo = _a.sent();
+                    repo = typeorm_1.getMongoRepository(Intelligence_1.default);
                     return [4 /*yield*/, repo.deleteMany(query)];
-                case 2: return [2 /*return*/, _a.sent()];
-                case 3: return [4 /*yield*/, typeorm_1.getRepository(Intelligence_1.default)
+                case 1: return [2 /*return*/, _a.sent()];
+                case 2: return [4 /*yield*/, typeorm_1.getRepository(Intelligence_1.default)
                         .createQueryBuilder("intelligence")
                         .delete()
                         .where("intelligence.global_id IN (:...gids)", { gids: gids })
                         .execute()];
-                case 4: return [2 /*return*/, _a.sent()];
-                case 5: return [3 /*break*/, 7];
-                case 6:
+                case 3: return [2 /*return*/, _a.sent()];
+                case 4: return [3 /*break*/, 6];
+                case 5:
                     err_9 = _a.sent();
                     error = new HTTPError(500, err_9, {}, "00005000001", "IntelligenceAndHistory.ctrl->deleteIntelligencesDB");
                     logger.error("deleteIntelligencesDB, error:", error);
                     throw error;
-                case 7: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     });
@@ -1105,53 +1161,48 @@ function updateEachIntelligencesDB(intelligences) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 11, , 12]);
+                    _a.trys.push([0, 7, , 8]);
                     repo = void 0;
+                    if (dbConfiguration_1.isMongo()) {
+                        repo = typeorm_1.getMongoRepository(Intelligence_1.default);
+                    }
+                    else {
+                        repo = typeorm_1.getRepository(Intelligence_1.default);
+                    }
                     i = 0;
                     _a.label = 1;
                 case 1:
-                    if (!(i < intelligences.length)) return [3 /*break*/, 10];
+                    if (!(i < intelligences.length)) return [3 /*break*/, 6];
                     intelligence = intelligences[i];
                     intelligence = objectsToIntelligences(intelligence, {});
-                    if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 5];
-                    if (!!repo) return [3 /*break*/, 3];
-                    return [4 /*yield*/, typeorm_1.getMongoRepository(Intelligence_1.default)];
+                    if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
+                    return [4 /*yield*/, repo.updateOne({
+                            global_id: intelligence.global_id,
+                        }, intelligence)];
                 case 2:
-                    repo = _a.sent();
-                    _a.label = 3;
-                case 3: return [4 /*yield*/, repo.updateOne({
-                        global_id: intelligence.global_id
-                    }, intelligence)];
-                case 4:
                     _a.sent();
-                    return [3 /*break*/, 9];
-                case 5:
-                    if (!!repo) return [3 /*break*/, 7];
-                    return [4 /*yield*/, typeorm_1.getRepository(Intelligence_1.default)];
-                case 6:
-                    repo = _a.sent();
-                    _a.label = 7;
-                case 7: return [4 /*yield*/, repo
+                    return [3 /*break*/, 5];
+                case 3: return [4 /*yield*/, repo
                         .createQueryBuilder("intelligence")
                         .update(Intelligence_1.default)
                         .set(intelligence)
                         .where("intelligence.global_id = :gloalId", {
-                        gloalId: intelligence.global_id
+                        gloalId: intelligence.global_id,
                     })
                         .execute()];
-                case 8:
+                case 4:
                     _a.sent();
-                    _a.label = 9;
-                case 9:
+                    _a.label = 5;
+                case 5:
                     i++;
                     return [3 /*break*/, 1];
-                case 10: return [3 /*break*/, 12];
-                case 11:
+                case 6: return [3 /*break*/, 8];
+                case 7:
                     err_10 = _a.sent();
-                    error = new HTTPError(500, err_10, {}, "00005000001", "IntelligenceAndHistory.ctrl->updateIntelligencesDB");
-                    logger.error("updateIntelligencesDB, error:", error);
+                    error = new HTTPError(500, err_10, {}, "00005000001", "IntelligenceAndHistory.ctrl->updateEachIntelligencesDB");
+                    logger.error("updateEachIntelligencesDB, error: ", error);
                     throw error;
-                case 12: return [2 /*return*/];
+                case 8: return [2 /*return*/];
             }
         });
     });

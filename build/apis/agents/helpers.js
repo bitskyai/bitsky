@@ -157,31 +157,66 @@ function registerAgent(agent, securityKey) {
  *
  * @returns {object}
  */
-function getAgent(gid, securityKey) {
+function getAgent(gid, securityKey, serialId, jobId, requestedWith, type) {
     return __awaiter(this, void 0, void 0, function () {
-        var agent, err_3;
+        var agent, updateAgent_1, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 2, , 3]);
+                    _a.trys.push([0, 3, , 4]);
                     if (!gid) {
                         throw new HTTPError(400, null, {
-                            globalId: gid
-                        }, "00024000001");
+                            globalId: gid,
+                        }, "00144000001");
                     }
                     return [4 /*yield*/, Agent_ctrl_1.getAgentByGlobalIdDB(gid, securityKey)];
                 case 1:
                     agent = _a.sent();
                     if (!agent) {
                         throw new HTTPError(404, null, {
-                            globalId: gid
-                        }, "00024040001", gid);
+                            globalId: gid,
+                        }, "00144040001", gid);
                     }
-                    return [2 /*return*/, agent];
+                    if (type && (_.toUpper(agent.type) !== _.toUpper(type))) {
+                        // if pass type, then need to make sure agent type is same with target agent type
+                        throw new HTTPError(400, null, {
+                            globalId: gid,
+                        }, "00144000004", gid, type, agent.type);
+                    }
+                    // console.log(
+                    //   `getAgent, gid: ${gid}, serialId: ${serialId}, jobId: ${jobId}`
+                    // );
+                    // If pass `serialId` and `serialId` isn't same with `agent.system.serialId`
+                    if (agent.system &&
+                        agent.system.serialId &&
+                        serialId &&
+                        agent.system.serialId != serialId) {
+                        // This agent was connected
+                        throw new HTTPError(403, null, {
+                            globalId: gid,
+                        }, "00144030001", gid);
+                    }
+                    updateAgent_1 = {
+                        system: {},
+                    };
+                    if (requestedWith !== CONFIG.REQUESTED_WITH_ENGINE_UI) {
+                        // if it isn't called by engine-ui then update last ping, otherwise don't need
+                        updateAgent_1.system.lastPing = Date.now();
+                    }
+                    if (type && serialId && !agent.system.serialId) {
+                        // need to update agent serialId, so this means agent was connected, before disconnect, don't allow connect
+                        // first agent connect to this
+                        // only user pass `type` and `serialId` then update serialId
+                        updateAgent_1.system.serialId = serialId;
+                    }
+                    return [4 /*yield*/, Agent_ctrl_1.updateAgentDB(gid, securityKey, updateAgent_1)];
                 case 2:
+                    _a.sent();
+                    return [2 /*return*/, agent];
+                case 3:
                     err_3 = _a.sent();
                     throw err_3;
-                case 3: return [2 /*return*/];
+                case 4: return [2 /*return*/];
             }
         });
     });
@@ -260,6 +295,45 @@ function updateAgent(gid, agent, securityKey) {
     });
 }
 /**
+ * Disconnect an agent
+ * 0017
+ * @param {string} gid - agent globalId
+ * @param {string} securityKey - current user's security key
+ */
+function disconnectAgent(gid, securityKey, jobId) {
+    return __awaiter(this, void 0, void 0, function () {
+        var originalAgent, version, updateAgent_2, err_6;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, checkAgentExistByGlobalID(gid, securityKey)];
+                case 1:
+                    originalAgent = _a.sent();
+                    version = semver.inc(originalAgent.system.version || "1.0.0", "major");
+                    updateAgent_2 = {
+                        globalId: generateGlobalId("agent"),
+                        system: {
+                            serialId: "",
+                            version: version,
+                            lastPing: 0,
+                        },
+                    };
+                    return [4 /*yield*/, Agent_ctrl_1.updateAgentDB(gid, securityKey, updateAgent_2)];
+                case 2:
+                    _a.sent();
+                    return [2 /*return*/, {
+                            globalId: updateAgent_2.globalId,
+                        }];
+                case 3:
+                    err_6 = _a.sent();
+                    throw err_6;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+/**
  * Activate an agent
  * 0017
  * @param {string} gid - agent globalId
@@ -267,7 +341,7 @@ function updateAgent(gid, agent, securityKey) {
  */
 function activateAgent(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var originalAgent, result, err_6;
+        var originalAgent, result, err_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -287,7 +361,7 @@ function activateAgent(gid, securityKey) {
                     else if (originalAgent.system.state === AGENT_STATE.active) {
                         // If an agent's state is active, don't need to update it again
                         return [2 /*return*/, {
-                                state: originalAgent.system.state
+                                state: originalAgent.system.state,
                             }];
                     }
                     // change state to **active**
@@ -297,11 +371,11 @@ function activateAgent(gid, securityKey) {
                 case 2:
                     result = _a.sent();
                     return [2 /*return*/, {
-                            state: originalAgent.system.state
+                            state: originalAgent.system.state,
                         }];
                 case 3:
-                    err_6 = _a.sent();
-                    throw err_6;
+                    err_7 = _a.sent();
+                    throw err_7;
                 case 4: return [2 /*return*/];
             }
         });
@@ -314,7 +388,7 @@ function activateAgent(gid, securityKey) {
  */
 function deactivateAgent(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var originalAgent, result, err_7;
+        var originalAgent, result, err_8;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -334,7 +408,7 @@ function deactivateAgent(gid, securityKey) {
                     else if (originalAgent.system.state != AGENT_STATE.active) {
                         // If an agent's state isn't active, don't need to update it again
                         return [2 /*return*/, {
-                                state: originalAgent.system.state
+                                state: originalAgent.system.state,
                             }];
                     }
                     // change state to **configured**
@@ -344,11 +418,11 @@ function deactivateAgent(gid, securityKey) {
                 case 2:
                     result = _a.sent();
                     return [2 /*return*/, {
-                            state: originalAgent.system.state
+                            state: originalAgent.system.state,
                         }];
                 case 3:
-                    err_7 = _a.sent();
-                    throw err_7;
+                    err_8 = _a.sent();
+                    throw err_8;
                 case 4: return [2 /*return*/];
             }
         });
@@ -356,12 +430,12 @@ function deactivateAgent(gid, securityKey) {
 }
 function unregisterAgent(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var result, err_8;
+        var result, err_9;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 3, , 4]);
-                    console.log('gid: ', gid, ' securityKey: ', securityKey);
+                    console.log("gid: ", gid, " securityKey: ", securityKey);
                     // Make sure can find Agent, if cannot, the it will throw 404 error
                     return [4 /*yield*/, checkAgentExistByGlobalID(gid, securityKey)];
                 case 1:
@@ -372,8 +446,8 @@ function unregisterAgent(gid, securityKey) {
                     result = _a.sent();
                     return [2 /*return*/, result];
                 case 3:
-                    err_8 = _a.sent();
-                    throw err_8;
+                    err_9 = _a.sent();
+                    throw err_9;
                 case 4: return [2 /*return*/];
             }
         });
@@ -386,5 +460,6 @@ module.exports = {
     unregisterAgent: unregisterAgent,
     activateAgent: activateAgent,
     deactivateAgent: deactivateAgent,
-    getAgents: getAgents
+    disconnectAgent: disconnectAgent,
+    getAgents: getAgents,
 };

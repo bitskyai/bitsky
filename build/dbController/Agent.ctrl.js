@@ -90,6 +90,10 @@ function flattenToObject(agents) {
             !obj.system ? (obj.system = {}) : "";
             obj.system.lastPing = agent.system_last_ping;
         }
+        if (_.get(agent, "system_serial_id")) {
+            !obj.system ? (obj.system = {}) : "";
+            obj.system.serialId = agent.system_serial_id;
+        }
         return obj;
     }
     if (_.isArray(agents)) {
@@ -168,14 +172,42 @@ function objectToAgent(agent, agentInstance) {
     if (_.get(agent, "system.securityKey")) {
         agentInstance.system_security_key = agent.system.securityKey;
     }
+    else {
+        if (_.get(agent, "system.securityKey") !== undefined) {
+            agentInstance.system_security_key = null;
+        }
+    }
     if (_.get(agent, "system.created")) {
         agentInstance.system_created_at = agent.system.created;
+    }
+    else {
+        if (_.get(agent, "system.created") !== undefined) {
+            agentInstance.system_created_at = null;
+        }
     }
     if (_.get(agent, "system.modified")) {
         agentInstance.system_modified_at = agent.system.modified;
     }
+    else {
+        if (_.get(agent, "system.modified") !== undefined) {
+            agentInstance.system_modified_at = null;
+        }
+    }
     if (_.get(agent, "system.lastPing")) {
         agentInstance.system_last_ping = agent.system.lastPing;
+    }
+    else {
+        if (_.get(agent, "system.lastPing") !== undefined) {
+            agentInstance.system_last_ping = null;
+        }
+    }
+    if (_.get(agent, "system.serialId")) {
+        agentInstance.system_serial_id = agent.system.serialId;
+    }
+    else {
+        if (_.get(agent, "system.serialId") !== undefined) {
+            agentInstance.system_serial_id = null;
+        }
     }
     return agentInstance;
 }
@@ -188,13 +220,13 @@ function addAgentDB(agent) {
                     _a.trys.push([0, 2, , 3]);
                     repo = typeorm_1.getRepository(Agent_1.default);
                     agentInstance = objectToAgent(agent, null);
-                    console.log('agentInstance: ', agentInstance);
+                    console.log("agentInstance: ", agentInstance);
                     return [4 /*yield*/, repo.save(agentInstance)];
                 case 1:
                     _a.sent();
                     return [2 /*return*/, {
                             _id: agentInstance.id,
-                            globalId: agentInstance.global_id
+                            globalId: agentInstance.global_id,
                         }];
                 case 2:
                     err_1 = _a.sent();
@@ -237,14 +269,14 @@ function getAgentsDB(securityKey) {
 exports.getAgentsDB = getAgentsDB;
 function getAgentByGlobalIdDB(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var repo, query, agent, err_3, error;
+        var repo, query, agent, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     repo = typeorm_1.getRepository(Agent_1.default);
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
@@ -252,13 +284,22 @@ function getAgentByGlobalIdDB(gid, securityKey) {
                     return [4 /*yield*/, repo.findOne(query)];
                 case 1:
                     agent = _a.sent();
+                    if (!agent) {
+                        throw new HTTPError(404, null, { globalId: gid });
+                    }
                     agent = flattenToObject(agent);
                     return [2 /*return*/, agent];
                 case 2:
                     err_3 = _a.sent();
-                    error = new HTTPError(500, err_3, {}, "00005000001", "Agent.ctrl->getAgentByGlobalIdDB");
-                    logger.error("getAgentByGlobalIdDB, error:", error);
-                    throw error;
+                    if (!(err_3 instanceof HTTPError)) {
+                        err_3 = new HTTPError(500, err_3, {}, "00005000001", "Agent.ctrl->getAgentByGlobalIdDB");
+                    }
+                    // if(err.statusCode === 404){
+                    //   logger.info(`getAgentByGlobalIdDB, cannot find agent by globalId - ${gid}`);
+                    // }else{
+                    //   logger.error(`getAgentByGlobalIdDB, error: ${err.message}`, {error: err});
+                    // }
+                    throw err_3;
                 case 3: return [2 /*return*/];
             }
         });
@@ -272,13 +313,24 @@ function updateAgentDB(gid, securityKey, agent) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
+                    if (!agent || !gid) {
+                        // if agent doesn't exist or gid doesn't exist, don't need to update
+                        return [2 /*return*/, {
+                                gid: gid
+                            }];
+                    }
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
                     }
                     repo = typeorm_1.getRepository(Agent_1.default);
+                    if (!agent.system) {
+                        agent.system = {};
+                    }
+                    // update last modified
+                    agent.system.modified = Date.now();
                     agent = objectToAgent(agent, {});
                     return [4 /*yield*/, repo.update(query, agent)];
                 case 1:
@@ -303,7 +355,7 @@ function deleteAgentDB(gid, securityKey) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
@@ -324,18 +376,3 @@ function deleteAgentDB(gid, securityKey) {
     });
 }
 exports.deleteAgentDB = deleteAgentDB;
-// export async function addAgent() {
-//   try {
-//     const repo = getRepository(Agent);
-//   } catch (err) {
-//     let error = new HTTPError(
-//       500,
-//       err,
-//       {},
-//       "00005000001",
-//       "Agent.ctrl->addAgent"
-//     );
-//     logger.error("addAgent, error:", error);
-//     throw error;
-//   }
-// }

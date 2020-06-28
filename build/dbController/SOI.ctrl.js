@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var _ = require("lodash");
 var typeorm_1 = require("typeorm");
 var SOI_1 = require("../entity/SOI");
+var dbConfiguration_1 = require("../util/dbConfiguration");
 var logger = require("../util/logger");
 var HTTPError = require("../util/error").HTTPError;
 function flattenToObject(sois) {
@@ -154,6 +155,9 @@ function objectToSOI(soi, soiInstance) {
     if (_.get(soi, "system.pingFailReason")) {
         soiInstance.system_ping_fail_reason = soi.system.pingFailReason;
     }
+    else {
+        soiInstance.system_ping_fail_reason = '';
+    }
     return soiInstance;
 }
 function addSOIDB(soi) {
@@ -170,12 +174,12 @@ function addSOIDB(soi) {
                     _a.sent();
                     return [2 /*return*/, {
                             _id: soiInstance.id,
-                            globalId: soiInstance.global_id
+                            globalId: soiInstance.global_id,
                         }];
                 case 2:
                     err_1 = _a.sent();
                     error = new HTTPError(500, err_1, {}, "00005000001", "SOI.ctrl->addSOIDB");
-                    logger.error("addSOIDB, error:", error);
+                    logger.error("addSOIDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
             }
@@ -203,7 +207,7 @@ function getSOIsDB(securityKey) {
                 case 2:
                     err_2 = _a.sent();
                     error = new HTTPError(500, err_2, {}, "00005000001", "SOI.ctrl->getSOIsDB");
-                    logger.error("getSOIsDB, error:", error);
+                    logger.error("getSOIsDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
             }
@@ -211,16 +215,70 @@ function getSOIsDB(securityKey) {
     });
 }
 exports.getSOIsDB = getSOIsDB;
+function getNeedCheckHealthSOIsDB(lastPing, securityKey) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sois, repo, query, soisQuery, err_3, error;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 7, , 8]);
+                    sois = [];
+                    if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
+                    return [4 /*yield*/, typeorm_1.getMongoRepository(SOI_1.default)];
+                case 1:
+                    repo = _a.sent();
+                    query = {
+                        system_last_ping: {
+                            $lt: lastPing,
+                        },
+                    };
+                    if (securityKey) {
+                        query.system_security_key = securityKey;
+                    }
+                    return [4 /*yield*/, repo.find(query)];
+                case 2:
+                    sois = _a.sent();
+                    return [3 /*break*/, 6];
+                case 3: return [4 /*yield*/, typeorm_1.getRepository(SOI_1.default)
+                        .createQueryBuilder()
+                        .where("system_last_ping < :lastPing", {
+                        lastPing: lastPing,
+                    })];
+                case 4:
+                    soisQuery = _a.sent();
+                    if (securityKey) {
+                        soisQuery.andWhere("system_security_key = :securityKey", {
+                            securityKey: securityKey,
+                        });
+                    }
+                    return [4 /*yield*/, soisQuery.getMany()];
+                case 5:
+                    sois = _a.sent();
+                    _a.label = 6;
+                case 6:
+                    sois = flattenToObject(sois);
+                    return [2 /*return*/, sois];
+                case 7:
+                    err_3 = _a.sent();
+                    error = new HTTPError(500, err_3, {}, "00005000001", "SOI.ctrl->getNeedCheckHealthSOIsDB");
+                    logger.error("getNeedCheckHealthSOIsDB, error:" + error.message, { error: error });
+                    throw error;
+                case 8: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.getNeedCheckHealthSOIsDB = getNeedCheckHealthSOIsDB;
 function getSOIByGlobalIdDB(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var repo, query, soi, err_3, error;
+        var repo, query, soi, err_4, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     repo = typeorm_1.getRepository(SOI_1.default);
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
@@ -231,9 +289,9 @@ function getSOIByGlobalIdDB(gid, securityKey) {
                     soi = flattenToObject(soi);
                     return [2 /*return*/, soi];
                 case 2:
-                    err_3 = _a.sent();
-                    error = new HTTPError(500, err_3, {}, "00005000001", "SOI.ctrl->getSOIByGlobalIdDB");
-                    logger.error("getSOIByGlobalIdDB, error:", error);
+                    err_4 = _a.sent();
+                    error = new HTTPError(500, err_4, {}, "00005000001", "SOI.ctrl->getSOIByGlobalIdDB");
+                    logger.error("getSOIByGlobalIdDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
             }
@@ -243,13 +301,13 @@ function getSOIByGlobalIdDB(gid, securityKey) {
 exports.getSOIByGlobalIdDB = getSOIByGlobalIdDB;
 function updateSOIDB(gid, securityKey, soi) {
     return __awaiter(this, void 0, void 0, function () {
-        var query, repo, result, err_4, error;
+        var query, repo, result, err_5, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
@@ -261,9 +319,9 @@ function updateSOIDB(gid, securityKey, soi) {
                     result = _a.sent();
                     return [2 /*return*/, result];
                 case 2:
-                    err_4 = _a.sent();
-                    error = new HTTPError(500, err_4, {}, "00005000001", "SOI.ctrl->updateSOIDB");
-                    logger.error("updateSOIDB, error:", error);
+                    err_5 = _a.sent();
+                    error = new HTTPError(500, err_5, {}, "00005000001", "SOI.ctrl->updateSOIDB");
+                    logger.error("updateSOIDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
             }
@@ -273,13 +331,13 @@ function updateSOIDB(gid, securityKey, soi) {
 exports.updateSOIDB = updateSOIDB;
 function deleteSOIDB(gid, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var query, repo, result, err_5, error;
+        var query, repo, result, err_6, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     query = {
-                        global_id: gid
+                        global_id: gid,
                     };
                     if (securityKey) {
                         query.system_security_key = securityKey;
@@ -290,9 +348,9 @@ function deleteSOIDB(gid, securityKey) {
                     result = _a.sent();
                     return [2 /*return*/, result];
                 case 2:
-                    err_5 = _a.sent();
-                    error = new HTTPError(500, err_5, {}, "00005000001", "SOI.ctrl->deleteSOIDB");
-                    logger.error("deleteSOIDB, error:", error);
+                    err_6 = _a.sent();
+                    error = new HTTPError(500, err_6, {}, "00005000001", "SOI.ctrl->deleteSOIDB");
+                    logger.error("deleteSOIDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
             }

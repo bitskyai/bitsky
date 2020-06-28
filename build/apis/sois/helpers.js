@@ -285,7 +285,7 @@ function updateSOIState(gid, originalSoi) {
                         throw new HTTPError(422, validateResult.errors, { originalSoi: originalSoi }, "00014000002");
                     }
                     state = _.toUpper(SOI_STATE.failed);
-                    pingFailReason = '';
+                    pingFailReason = undefined;
                     return [4 /*yield*/, checkSOIHealth(originalSoi.baseURL, originalSoi.health.method, originalSoi.health.path)];
                 case 3:
                     soiHealth = _a.sent();
@@ -317,7 +317,7 @@ function updateSOIState(gid, originalSoi) {
                     _a.sent();
                     return [2 /*return*/, {
                             state: state,
-                            reason: soiHealth.reason
+                            reason: pingFailReason
                         }];
                 case 6:
                     err_7 = _a.sent();
