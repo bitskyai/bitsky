@@ -6,9 +6,14 @@ ENV REFRESHED_AT 2020-02-19
 # create app directory
 WORKDIR /usr/munew
 
+
+COPY package*.json ./
+
+# Only install 
+RUN npm ci --only=production
+
+# Bundle app source
 COPY . .
-# Only install production dependencies
-RUN yarn --production=true
 
 EXPOSE 9099
 CMD ["node", "build/index.js"]

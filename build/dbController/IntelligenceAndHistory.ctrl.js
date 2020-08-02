@@ -295,7 +295,12 @@ function addIntelligencesDB(intelligences) {
                 case 4:
                     err_1 = _a.sent();
                     error = new HTTPError(500, err_1, {}, "00005000001", "IntelligenceAndHistory.ctrl->addIntelligencesDB");
-                    logger.error("addIntelligencesDB, error:", error);
+                    logger.error("addIntelligencesDB fail " + error.message, {
+                        error: error,
+                        parameters: {
+                            intelligences: intelligences,
+                        },
+                    });
                     throw error;
                 case 5: return [2 /*return*/];
             }
@@ -475,7 +480,18 @@ function getIntelligencesOrHistoryForManagementDB(cursor, url, state, limit, sec
                 case 9:
                     err_2 = _a.sent();
                     error = new HTTPError(500, err_2, {}, "00005000001", "IntelligenceAndHistory.ctrl->getIntelligencesForManagementDB");
-                    logger.error("getIntelligencesForManagementDB, error:", error);
+                    logger.error("getIntelligencesForManagementDB fail " + error.message, {
+                        error: error,
+                        parameters: {
+                            cursor: cursor,
+                            url: url,
+                            state: state,
+                            limit: limit,
+                            securityKey: securityKey,
+                            history: history,
+                            ids: ids,
+                        },
+                    });
                     throw error;
                 case 10: return [2 /*return*/];
             }
@@ -546,7 +562,8 @@ function updateIntelligencesStateForManagementDB(state, url, selectedState, ids,
                     _a.trys.push([0, 6, , 7]);
                     state = _.toUpper(state);
                     states = [INTELLIGENCE_STATE.draft, state];
-                    if (state === INTELLIGENCE_STATE.configured || state === INTELLIGENCE_STATE.paused) {
+                    if (state === INTELLIGENCE_STATE.configured ||
+                        state === INTELLIGENCE_STATE.paused) {
                         states.push(INTELLIGENCE_STATE.running);
                     }
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
@@ -624,7 +641,7 @@ function updateIntelligencesStateForManagementDB(state, url, selectedState, ids,
                     }
                     if (selectedState) {
                         intelligenceQuery.andWhere("intelligence.system_state IN (:...selectedState)", {
-                            selectedState: selectedState.split(",")
+                            selectedState: selectedState.split(","),
                         });
                     }
                     if (timeoutStartedAt) {
@@ -748,7 +765,7 @@ function deleteIntelligencesOrHistoryForManagementDB(url, selectedState, ids, se
                             andWhere = true;
                         }
                         intelligenceQuery[funName]("intelligence.system_state IN (:...states)", {
-                            states: selectedState.split(",")
+                            states: selectedState.split(","),
                         });
                     }
                     return [4 /*yield*/, intelligenceQuery.execute()];
@@ -1176,20 +1193,31 @@ function updateEachIntelligencesDB(intelligences) {
                     intelligence = intelligences[i];
                     intelligence = objectsToIntelligences(intelligence, {});
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 3];
+                    logger.debug("updateEachIntelligencesDB->isMongo", {
+                        i: i,
+                        global_id: intelligence.global_id
+                    });
                     return [4 /*yield*/, repo.updateOne({
                             global_id: intelligence.global_id,
-                        }, intelligence)];
+                        }, {
+                            $set: intelligence
+                        })];
                 case 2:
                     _a.sent();
                     return [3 /*break*/, 5];
-                case 3: return [4 /*yield*/, repo
-                        .createQueryBuilder("intelligence")
-                        .update(Intelligence_1.default)
-                        .set(intelligence)
-                        .where("intelligence.global_id = :gloalId", {
-                        gloalId: intelligence.global_id,
-                    })
-                        .execute()];
+                case 3:
+                    logger.debug("updateEachIntelligencesDB->sqlite", {
+                        i: i,
+                        global_id: intelligence.global_id
+                    });
+                    return [4 /*yield*/, repo
+                            .createQueryBuilder("intelligence")
+                            .update(Intelligence_1.default)
+                            .set(intelligence)
+                            .where("intelligence.global_id = :gloalId", {
+                            gloalId: intelligence.global_id,
+                        })
+                            .execute()];
                 case 4:
                     _a.sent();
                     _a.label = 5;
@@ -1200,7 +1228,9 @@ function updateEachIntelligencesDB(intelligences) {
                 case 7:
                     err_10 = _a.sent();
                     error = new HTTPError(500, err_10, {}, "00005000001", "IntelligenceAndHistory.ctrl->updateEachIntelligencesDB");
-                    logger.error("updateEachIntelligencesDB, error: ", error);
+                    logger.error("updateEachIntelligencesDB fail " + error.message, {
+                        error: error
+                    });
                     throw error;
                 case 8: return [2 /*return*/];
             }
