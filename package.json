@@ -1,5 +1,5 @@
 {
-  "name": "dia-engine",
+  "name": "bitsky",
   "version": "0.7.0",
   "description": "Decentralized Intelligence Agency",
   "migrationVersion": "1",
@@ -56,6 +56,6 @@
     "check-dependencies": "ncu",
     "update-dependencies": "ncu -u"
   },
-  "author": "help.munewio@gmail.com",
+  "author": "help.bitskyai@gmail.com",
   "license": "Apache-2.0"
 }
