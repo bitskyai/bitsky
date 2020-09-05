@@ -1,4 +1,4 @@
-# BitSky
+# BitSky Web Application
 
 This docker image includes [BitSky Supplier](https://docs.bitsky.ai/overview#bitsky-supplier).
 This docker image expose `9099` port.
@@ -55,7 +55,7 @@ docker run -e TYPEORM_CONNECTION=mongodb \
            -e TYPEORM_USERNAME=dbuser \
            -e TYPEORM_PASSWORD=dbpassword \
            -p 9101:9099 \
-           bitskyai/bitsky
+           bitskyai/web-app
 ```
 
 This is an example of connect to [mlab.com](https://mlab.com), make sure you change **TYPEORM_HOST**, **TYPEORM_DATABASE**, **TYPEORM_PORT**, **TYPEORM_USERNAME**, **TYPEORM_PASSWORD**, and port mapping
