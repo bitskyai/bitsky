@@ -1,9 +1,10 @@
 FROM mhart/alpine-node:12
 
-LABEL maintainer="BitSky docker maintainers <help.bitskyai@gmail.com>"
+LABEL maintainer="Munew docker maintainers <help.bitskyai@gmail.com>"
+ENV REFRESHED_AT 2020-02-19
 
 # create app directory
-WORKDIR /usr/bitsky
+WORKDIR /usr/munew
 
 
 COPY package*.json ./
@@ -18,8 +19,8 @@ EXPOSE 9099
 CMD ["node", "build/index.js"]
 
 # Metadata
-LABEL bitsky.image.vendor="BitSky" \
-    bitsky.image.url="https://bitsky.ai" \
-    bitsky.image.title="BitSky" \
-    bitsky.image.description="Response for collect intelligence data and send back to Analyst Service" \
-    bitsky.image.documentation="https://docs.bitsky.ai"
+LABEL munew.image.vendor="Munew" \
+    munew.image.url="https://munew.io" \
+    munew.image.title="Munew Browser Extension Agent" \
+    munew.image.description="Response for collect intelligence data and send back to Analyst Service. It contains Google Chrome, Firefox and Opera extensions." \
+    munew.image.documentation="https://docs.munew.io"

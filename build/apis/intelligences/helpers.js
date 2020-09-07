@@ -43,7 +43,7 @@ var soisHelpers = require("../sois/helpers");
 var agentsHelpers = require("../agents/helpers");
 var logger = require("../../util/logger");
 var utils = require("../../util/utils");
-var getConfig = require('../../config').getConfig;
+var getConfig = require("../../config").getConfig;
 var IntelligenceAndHistory_ctrl_1 = require("../../dbController/IntelligenceAndHistory.ctrl");
 var TasksJobQueue_ctrl_1 = require("../../dbController/TasksJobQueue.ctrl");
 // To avoid running check soi status multiple times
@@ -263,19 +263,23 @@ function waitUntilTopTask(globalId) {
                                             if (!job || !job.global_id) {
                                                 // this means all jobs are timeout, but this agent is still waiting
                                                 // normally this happend the intervalAgendas removeTimeoutTaskJob
-                                                logger.info("No job in the queue, this happened because intervalAgendas removeTimeoutTaskJob", { function: 'waitUntilTopTask' });
+                                                logger.info("No job in the queue, this happened because intervalAgendas removeTimeoutTaskJob", { function: "waitUntilTopTask" });
                                                 clearInterval(waitHandler);
                                                 reject(false);
                                                 return [2 /*return*/];
                                             }
-                                            logger.debug("Top GlobalId in job queue:" + job.global_id + ", globalId: " + globalId, { function: 'waitUntilTopTask' });
+                                            logger.debug("Top GlobalId in job queue:" + job.global_id + ", globalId: " + globalId, { function: "waitUntilTopTask" });
                                             if (job.global_id == globalId) {
-                                                logger.debug(globalId + " is top job now", { function: 'waitUntilTopTask' });
+                                                logger.debug(globalId + " is top job now", {
+                                                    function: "waitUntilTopTask",
+                                                });
                                                 clearInterval(waitHandler);
                                                 resolve(true);
                                             }
-                                            else if ((Date.now() - startTime) > taskJobTimeout) {
-                                                logger.error(globalId + " is timeout", { function: 'waitUntilTopTask' });
+                                            else if (Date.now() - startTime > taskJobTimeout) {
+                                                logger.error(globalId + " is timeout", {
+                                                    function: "waitUntilTopTask",
+                                                });
                                                 clearInterval(waitHandler);
                                                 reject(false);
                                             }
@@ -383,7 +387,7 @@ function getIntelligences(agentGid, securityKey) {
 }
 function updateIntelligences(content, securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var contentMap_1, gids, intelligences, failedIntelligences, intelligenceHistory, i, item, intelligence, passedAgent, result, err_7;
+        var contentMap_1, gids, intelligences, failedIntelligences, intelligenceHistory, i, item, intelligence, passedAgent, i, result, err_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -441,7 +445,7 @@ function updateIntelligences(content, securityKey) {
                             gids.push(item.globalId);
                             delete item.id;
                             delete item._id;
-                            // if it's successful, then means reach max retry time, to keep why it isn't successful
+                            // if it isn't successful, then means reach max retry time, to keep why it isn't successful
                             if (_.get(intelligence, "system.state") !== INTELLIGENCE_STATE.finished) {
                                 item.system.failuresNumber += 1;
                                 item.system.failuresReason = _.get(intelligence, "system.failuresReason");
@@ -465,13 +469,19 @@ function updateIntelligences(content, securityKey) {
                 case 2:
                     _a.sent();
                     _a.label = 3;
-                case 3: 
-                // add it to intelligences_history
-                // await insertMany(COLLECTIONS_NAME.intelligencesHistory, intelligences);
-                return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.addIntelligenceHistoryDB(intelligenceHistory)];
-                case 4:
+                case 3:
                     // add it to intelligences_history
-                    // await insertMany(COLLECTIONS_NAME.intelligencesHistory, intelligences);
+                    for (i = 0; i < intelligenceHistory.length; i++) {
+                        // remove `failuresReason` if intelligence is successful
+                        if (_.get(intelligenceHistory[i], "system.state") ==
+                            INTELLIGENCE_STATE.finished) {
+                            if (_.get(intelligenceHistory[i], "system.failuresReason")) {
+                                _.set(intelligenceHistory[i], "system.failuresReason", "");
+                            }
+                        }
+                    }
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.addIntelligenceHistoryDB(intelligenceHistory)];
+                case 4:
                     _a.sent();
                     return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.deleteIntelligencesDB(gids, securityKey)];
                 case 5:

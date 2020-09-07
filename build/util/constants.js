@@ -17,6 +17,9 @@ const CONFIG = {
   TIMEOUT_VALUE_FOR_INTELLIGENCE: 5 * 60 * 1000,
   MAX_FAIL_NUMBER_FOR_INTELLIGENCE: 3, // Max fail number for an intelligence, if more then this fail number, this intelligence will be moved to history
   LOG_FILES_PATH: "./public/log",
+  LOG_MAX_SIZE: 50*1024*1024, // 50MB
+  ERROR_LOG_FILE_NAME: "error.log",
+  COMBINED_LOG_FILE_NAME: "combined.log",
   NODE_ENV: "development",
   EACH_TIME_INTELLIGENCES_NUMBER: 1,
   SERVICE_NAME: packageJson.name,
@@ -26,7 +29,7 @@ const CONFIG = {
   DEFAULT_HEALTH_METHOD: "GET",
   DEFAULT_HEALTH_PATH: "/health",
   DEFAULT_INTELLIGENCES_METHOD: "POST",
-  DEFAULT_INTELLIGENCES_PATH: "/apis/intelligences"
+  DEFAULT_INTELLIGENCES_PATH: "/apis/tasks"
 };
 
 const DEFAULT_DB_CONFIG = {
@@ -102,7 +105,7 @@ const DEFAULT_SOI = {
   },
   callback: {
     method: "POST",
-    path: "/apis/intelligences"
+    path: "/apis/tasks"
   }
 };
 

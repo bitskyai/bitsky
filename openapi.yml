@@ -1,10 +1,10 @@
 openapi: 3.0.1
 info:
-  title: BitSky Supplier
+  title: DIA Engine
   description: Decentralized Intelligence Agency
   termsOfService: http://swagger.io/terms/
   contact:
-    email: help.bitskyai@gmail.com
+    email: shaokexu@gmail.com
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -401,7 +401,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /apis/manangement/tasks:
+  /apis/manangement/intelligences:
     get:
       tags:
         - intelligences
@@ -478,7 +478,7 @@ paths:
       responses:
         204:
           description: Delete successful
-  /apis/manangement/tasks/pause:
+  /apis/manangement/intelligences/pause:
     post:
       tags:
         - intelligences
@@ -504,7 +504,7 @@ paths:
       responses:
         204:
           description: Pasuse all intelligences successful
-  /apis/manangement/tasks/resume:
+  /apis/manangement/intelligences/resume:
     post:
       tags:
         - intelligences
@@ -530,7 +530,7 @@ paths:
       responses:
         204:
           description: Resume all intelligences successful
-  /apis/tasks:
+  /apis/intelligences:
     get:
       tags:
         - intelligences

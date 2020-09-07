@@ -62,7 +62,7 @@ function updateTimeoutIntelligences(securityKey) {
                         startedAt: startedAt,
                         securityKey: securityKey,
                     });
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.timeout, null, null, null, startedAt, securityKey)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.timeout, null, null, null, startedAt, securityKey, true)];
                 case 1:
                     _a.sent();
                     return [3 /*break*/, 3];
@@ -102,7 +102,7 @@ function checkAnalystServicesHealth(securityKey) {
                     _a.label = 2;
                 case 2:
                     if (!(i < analystServices.length)) return [3 /*break*/, 5];
-                    return [4 /*yield*/, updateSOIState(analystServices[i].globalId, analystServices[i])];
+                    return [4 /*yield*/, updateSOIState(analystServices[i].globalId, analystServices[i], true)];
                 case 3:
                     _a.sent();
                     _a.label = 4;

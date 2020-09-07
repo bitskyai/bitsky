@@ -266,9 +266,9 @@ function checkSOIHealth(baseURL, method, url) {
  * @param {string} gid - SOI globalId
  * @param {object} originalSoi - Original SOI Data
  */
-function updateSOIState(gid, originalSoi) {
+function updateSOIState(gid, originalSoi, dontUpdateModified) {
     return __awaiter(this, void 0, void 0, function () {
-        var validateResult, state, pingFailReason, soiHealth, err_7;
+        var validateResult, state, pingFailReason, soiHealth, soiSystemInfo, err_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -302,17 +302,20 @@ function updateSOIState(gid, originalSoi) {
                             pingFailReason = soiHealth.reason;
                         }
                     }
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesSOIStateForManagementDB(gid, state)];
+                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesSOIStateForManagementDB(gid, state, dontUpdateModified)];
                 case 4:
                     _a.sent();
-                    return [4 /*yield*/, SOI_ctrl_1.updateSOIDB(gid, null, {
-                            system: {
-                                state: state,
-                                modified: Date.now(),
-                                lastPing: Date.now(),
-                                pingFailReason: pingFailReason
-                            }
-                        })];
+                    soiSystemInfo = {
+                        system: {
+                            state: state,
+                            lastPing: Date.now(),
+                            pingFailReason: pingFailReason
+                        }
+                    };
+                    if (!dontUpdateModified) {
+                        soiSystemInfo.system.modified = Date.now();
+                    }
+                    return [4 /*yield*/, SOI_ctrl_1.updateSOIDB(gid, null, soiSystemInfo)];
                 case 5:
                     _a.sent();
                     return [2 /*return*/, {
