@@ -45,7 +45,7 @@ This will use `SQLite` if you close docker container, then database file also wi
 
 ### Use MongoDB
 
-Find detail of the environment values from [Add or modify Environment Variables](https://docs.bitsky.ai/how-tos/configure-munew-in-heroku#add-or-modify-environment-variables).
+Find detail of the environment values from [Add or modify Environment Variables](https://docs.bitsky.ai/how-tos/configure-bitsky-in-heroku#add-or-modify-environment-variables).
 
 ```
 docker run -e TYPEORM_CONNECTION=mongodb \

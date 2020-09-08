@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://munew.io/schemas/intelligence.json",
+  "$id": "https://bitsky.ai/schemas/intelligence.json",
   "type": "object",
   "title": "Intelligence Schema",
   "version": "1.0.0",
