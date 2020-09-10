@@ -8,10 +8,10 @@ const packageJson = require('../package.json');
 // routers
 const apikey = require('./apis/apikey');
 const self = require('./apis/self');
-const sois = require('./apis/sois');
-const intelligences = require('./apis/intelligences');
-const intelligencesHistory = require('./apis/intelligenceshistory');
-const agents = require('./apis/agents');
+const retailers = require('./apis/retailers');
+const tasks = require('./apis/tasks');
+const tasksHistory = require('./apis/taskshistory');
+const producers = require('./apis/producers');
 const health = require('./apis/health');
 
 function createAPIRouters(app){
@@ -25,10 +25,10 @@ function createAPIRouters(app){
   // register redfin routers
   apikey.router(router);
   self.router(router);
-  sois.router(router);
-  intelligences.router(router);
-  intelligencesHistory.router(router);
-  agents.router(router);
+  retailers.router(router);
+  tasks.router(router);
+  tasksHistory.router(router);
+  producers.router(router);
 
 
   return router;

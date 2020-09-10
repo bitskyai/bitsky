@@ -38,31 +38,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var getConfig = require("../../config").getConfig;
 var logger = require("../../util/logger");
-var INTELLIGENCE_STATE = require("../../util/constants").INTELLIGENCE_STATE;
+var TASK_STATE = require("../../util/constants").TASK_STATE;
 var HTTPError = require("../../util/error").HTTPError;
-var IntelligenceAndHistory_ctrl_1 = require("../../dbController/IntelligenceAndHistory.ctrl");
+var TaskAndHistory_ctrl_1 = require("../../dbController/TaskAndHistory.ctrl");
 var TasksJobQueue_ctrl_1 = require("../../dbController/TasksJobQueue.ctrl");
-var SOI_ctrl_1 = require("../../dbController/SOI.ctrl");
-var updateSOIState = require("../sois/helpers").updateSOIState;
+var Retailer_ctrl_1 = require("../../dbController/Retailer.ctrl");
+var updateRetailerState = require("../retailers/helpers").updateRetailerState;
 /**
  * Update all
  */
-function updateTimeoutIntelligences(securityKey) {
+function updateTimeoutTasks(securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var intelligenceTimeout, startedAt, err_1;
+        var taskTimeout, startedAt, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    intelligenceTimeout = getConfig("TIMEOUT_VALUE_FOR_INTELLIGENCE");
-                    startedAt = Date.now() - intelligenceTimeout;
-                    logger.info("Update intelligences if they are timeout", {
-                        function: "updateTimeoutIntelligences",
-                        intelligenceTimeout: intelligenceTimeout,
+                    taskTimeout = getConfig("TIMEOUT_VALUE_FOR_TASK");
+                    startedAt = Date.now() - taskTimeout;
+                    logger.info("Update tasks if they are timeout", {
+                        function: "updateTimeoutTasks",
+                        taskTimeout: taskTimeout,
                         startedAt: startedAt,
                         securityKey: securityKey,
                     });
-                    return [4 /*yield*/, IntelligenceAndHistory_ctrl_1.updateIntelligencesStateForManagementDB(INTELLIGENCE_STATE.timeout, null, null, null, startedAt, securityKey, true)];
+                    return [4 /*yield*/, TaskAndHistory_ctrl_1.updateTasksStateForManagementDB(TASK_STATE.timeout, null, null, null, startedAt, securityKey, true)];
                 case 1:
                     _a.sent();
                     return [3 /*break*/, 3];
@@ -72,37 +72,37 @@ function updateTimeoutIntelligences(securityKey) {
                         // if it isn't HTTPError instance
                         err_1 = new HTTPError(500, err_1);
                     }
-                    logger.error("Update intelligences if they are timeout fail. Error: " + err_1.message, { error: err_1, function: "updateTimeoutIntelligences" });
+                    logger.error("Update tasks if they are timeout fail. Error: " + err_1.message, { error: err_1, function: "updateTimeoutTasks" });
                     throw err_1;
                 case 3: return [2 /*return*/];
             }
         });
     });
 }
-exports.updateTimeoutIntelligences = updateTimeoutIntelligences;
-function checkAnalystServicesHealth(securityKey) {
+exports.updateTimeoutTasks = updateTimeoutTasks;
+function checkRetailerServicesHealth(securityKey) {
     return __awaiter(this, void 0, void 0, function () {
-        var intervalCheckAS, lastPing, analystServices, i, err_2;
+        var intervalCheckAS, lastPing, retailerServices, i, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 6, , 7]);
-                    intervalCheckAS = getConfig("SOI_STATE_CHECK_TIME");
+                    intervalCheckAS = getConfig("RETAILER_STATE_CHECK_TIME");
                     lastPing = Date.now() - intervalCheckAS;
-                    return [4 /*yield*/, SOI_ctrl_1.getNeedCheckHealthSOIsDB(lastPing, securityKey)];
+                    return [4 /*yield*/, Retailer_ctrl_1.getNeedCheckHealthRetailersDB(lastPing, securityKey)];
                 case 1:
-                    analystServices = _a.sent();
-                    logger.info("Check Analyst Service Health", {
-                        function: "checkAnalystServicesHealth",
+                    retailerServices = _a.sent();
+                    logger.info("Check Retailer Service Health", {
+                        function: "checkRetailerServicesHealth",
                         intervalCheckAS: intervalCheckAS,
                         lastPing: lastPing,
-                        analystServices: analystServices.length,
+                        retailerServices: retailerServices.length,
                     });
                     i = 0;
                     _a.label = 2;
                 case 2:
-                    if (!(i < analystServices.length)) return [3 /*break*/, 5];
-                    return [4 /*yield*/, updateSOIState(analystServices[i].globalId, analystServices[i], true)];
+                    if (!(i < retailerServices.length)) return [3 /*break*/, 5];
+                    return [4 /*yield*/, updateRetailerState(retailerServices[i].globalId, retailerServices[i], true)];
                 case 3:
                     _a.sent();
                     _a.label = 4;
@@ -116,9 +116,9 @@ function checkAnalystServicesHealth(securityKey) {
                         // if it isn't HTTPError instance
                         err_2 = new HTTPError(500, err_2);
                     }
-                    logger.error("Check Analyst Service Health fail. Error: " + err_2.message, {
+                    logger.error("Check Retailer Service Health fail. Error: " + err_2.message, {
                         error: err_2,
-                        function: "checkAnalystServicesHealth",
+                        function: "checkRetailerServicesHealth",
                     });
                     throw err_2;
                 case 7: return [2 /*return*/];
@@ -126,7 +126,7 @@ function checkAnalystServicesHealth(securityKey) {
         });
     });
 }
-exports.checkAnalystServicesHealth = checkAnalystServicesHealth;
+exports.checkRetailerServicesHealth = checkRetailerServicesHealth;
 function removeTimeoutTaskJob() {
     return __awaiter(this, void 0, void 0, function () {
         var err_3;

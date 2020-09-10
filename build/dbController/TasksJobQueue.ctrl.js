@@ -42,7 +42,7 @@ var logger = require("../util/logger");
 var getConfig = require("../config").getConfig;
 var HTTPError = require("../util/error").HTTPError;
 var dbConfiguration_1 = require("../util/dbConfiguration");
-function addATaskJob(globalId, agentGlobalId) {
+function addATaskJob(globalId, producerGlobalId) {
     return __awaiter(this, void 0, void 0, function () {
         var repo, job, err_1, error;
         return __generator(this, function (_a) {
@@ -52,7 +52,7 @@ function addATaskJob(globalId, agentGlobalId) {
                     repo = typeorm_1.getRepository(TasksJobQueue_1.default);
                     return [4 /*yield*/, repo.save({
                             global_id: globalId,
-                            agent_global_id: agentGlobalId,
+                            producer_global_id: producerGlobalId,
                         })];
                 case 1:
                     job = _a.sent();

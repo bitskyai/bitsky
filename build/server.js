@@ -74,7 +74,8 @@ function startServer(customConfig) {
                         server.destroy();
                     }
                     server = app_1.listen(getConfig_1("PORT"), function () {
-                        logger_1.info("Express server listening on http://localhost:%d/ in %s mode", getConfig_1("PORT"), app_1.get("env"));
+                        console.log("BitSky server listening on http://localhost:" + getConfig_1("PORT") + "/ in " + app_1.get("env") + " mode");
+                        logger_1.info("BitSky server listening on http://localhost:%d/ in %s mode", getConfig_1("PORT"), app_1.get("env"));
                     });
                     enableDestroy(server);
                     // Handle signals gracefully. Heroku will send SIGTERM before idle.

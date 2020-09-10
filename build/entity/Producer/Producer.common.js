@@ -18,31 +18,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var typeorm_1 = require("typeorm");
-var dbConfiguration_1 = require("../../util/dbConfiguration");
-var Base_1 = require("../Base");
-var Base;
-if (dbConfiguration_1.isMongo()) {
-    Base = Base_1.BaseMongo;
-}
-else {
-    Base = Base_1.BaseSQL;
-}
-// This reference to 'schemas/retailer.json'
-// Will use JSON schema to validation
-var BaseTasksJobQueue = /** @class */ (function (_super) {
-    __extends(BaseTasksJobQueue, _super);
-    function BaseTasksJobQueue() {
+var BaseProducer_1 = require("./BaseProducer");
+var Producer = /** @class */ (function (_super) {
+    __extends(Producer, _super);
+    function Producer() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    __decorate([
-        typeorm_1.Column(),
-        __metadata("design:type", String)
-    ], BaseTasksJobQueue.prototype, "producer_global_id", void 0);
-    return BaseTasksJobQueue;
-}(Base));
-exports.BaseTasksJobQueue = BaseTasksJobQueue;
+    Producer = __decorate([
+        typeorm_1.Entity('producer')
+    ], Producer);
+    return Producer;
+}(BaseProducer_1.BaseProducer));
+exports.Producer = Producer;

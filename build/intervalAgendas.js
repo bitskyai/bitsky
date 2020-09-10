@@ -39,44 +39,44 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var helpers_1 = require("./apis/agendas/helpers");
 var getConfig = require("./config").getConfig;
 var logger = require("./util/logger");
-var __updateTimeoutIntelligencesIntervalHandler = null;
-var __checkAnalystServicesHealthIntervalHandler = null;
+var __updateTimeoutTasksIntervalHandler = null;
+var __checkRetailerServicesHealthIntervalHandler = null;
 var __removeTimeoutTaskJobIntervalHandler = null;
 function setupIntervalAgendas() {
     return __awaiter(this, void 0, void 0, function () {
-        var intelligenceTimeout_1, intervalCheckAS, timeoutCreatedAt_1, err_1;
+        var taskTimeout_1, intervalCheckAS, timeoutCreatedAt_1, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 4, , 5]);
-                    return [4 /*yield*/, helpers_1.updateTimeoutIntelligences()];
+                    return [4 /*yield*/, helpers_1.updateTimeoutTasks()];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, helpers_1.checkAnalystServicesHealth()];
+                    return [4 /*yield*/, helpers_1.checkRetailerServicesHealth()];
                 case 2:
                     _a.sent();
                     return [4 /*yield*/, helpers_1.removeTimeoutTaskJob()];
                 case 3:
                     _a.sent();
-                    clearInterval(__updateTimeoutIntelligencesIntervalHandler);
-                    clearInterval(__checkAnalystServicesHealthIntervalHandler);
+                    clearInterval(__updateTimeoutTasksIntervalHandler);
+                    clearInterval(__checkRetailerServicesHealthIntervalHandler);
                     clearInterval(__removeTimeoutTaskJobIntervalHandler);
-                    intelligenceTimeout_1 = getConfig("INTELLIGENCE_TIMEOUT_CHECK_TIME");
-                    intervalCheckAS = getConfig("SOI_STATE_CHECK_TIME");
+                    taskTimeout_1 = getConfig("TASK_TIMEOUT_CHECK_TIME");
+                    intervalCheckAS = getConfig("RETAILER_STATE_CHECK_TIME");
                     timeoutCreatedAt_1 = getConfig("TASK_JOB_TIMEOUT") * 0.2;
-                    __updateTimeoutIntelligencesIntervalHandler = setInterval(function () {
-                        logger.info("start updateTimeoutIntelligences ... ", {
+                    __updateTimeoutTasksIntervalHandler = setInterval(function () {
+                        logger.info("start updateTimeoutTasks ... ", {
                             function: "setupIntervalAgendas",
-                            intelligenceTimeout: intelligenceTimeout_1,
+                            taskTimeout: taskTimeout_1,
                         });
-                        helpers_1.updateTimeoutIntelligences();
-                    }, intelligenceTimeout_1);
-                    __checkAnalystServicesHealthIntervalHandler = setInterval(function () {
-                        logger.info("start checkAnalystServicesHealth ... ", {
+                        helpers_1.updateTimeoutTasks();
+                    }, taskTimeout_1);
+                    __checkRetailerServicesHealthIntervalHandler = setInterval(function () {
+                        logger.info("start checkRetailerServicesHealth ... ", {
                             function: "setupIntervalAgendas",
-                            intelligenceTimeout: intelligenceTimeout_1,
+                            taskTimeout: taskTimeout_1,
                         });
-                        helpers_1.checkAnalystServicesHealth();
+                        helpers_1.checkRetailerServicesHealth();
                     }, intervalCheckAS);
                     __removeTimeoutTaskJobIntervalHandler = setInterval(function () {
                         logger.info("start removeTimeoutTaskJob ... ", {
@@ -87,7 +87,7 @@ function setupIntervalAgendas() {
                     }, timeoutCreatedAt_1);
                     logger.info("successful setupIntervalAgendas", {
                         function: "setupIntervalAgendas",
-                        intelligenceTimeout: intelligenceTimeout_1,
+                        taskTimeout: taskTimeout_1,
                         intervalCheckAS: intervalCheckAS,
                     });
                     return [3 /*break*/, 5];
