@@ -24,7 +24,7 @@ This docker image expose `9099` port.
 
 If you want to run it local, make sure you already installed [NodeJS](https://nodejs.org/en/) and [Yarn](https://yarnpkg.com/).
 
-1. Install node_modules. `yarn install`
+1. Install node_modules. `npm install`
 2. Start server
    ```
    npm start

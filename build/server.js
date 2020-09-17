@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Created by Shaoke Xu on 4/29/18.
+ * Created by Neo on 4/29/18.
  */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -94,7 +94,7 @@ function startServer(customConfig) {
                         server.destroy();
                     });
                     server.on("close", function () {
-                        logger_1.info("Engine Server closed");
+                        logger_1.info("Supplier Server closed");
                         // process.emit("cleanup");
                         logger_1.info("Giving 100ms time to cleanup..");
                         // Give a small time frame to clean up

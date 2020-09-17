@@ -619,7 +619,7 @@ function updateTasksStateForManagementDB(state, url, selectedState, ids, timeout
                         mongoDBUdpateData.$set.system_ended_at = Date.now();
                         mongoDBUdpateData.$set.system_state = TASK_STATE.timeout;
                         mongoDBUdpateData.$set.system_failures_reason =
-                            "Producer collect task timeout. Engine automatically set to TIMEOUT status";
+                            "Producer collect task timeout. Supplier automatically set to TIMEOUT status";
                         // Since this is set by system, so don't auto increase fail number
                         // Actually, it isn't easy to auto increase `system_failures_number` ^_^
                     }
@@ -667,7 +667,7 @@ function updateTasksStateForManagementDB(state, url, selectedState, ids, timeout
                         sqlUpdateData.system_ended_at = Date.now();
                         sqlUpdateData.system_state = TASK_STATE.timeout;
                         sqlUpdateData.system_failures_reason =
-                            "Producer collect task timeout. Engine automatically set to TIMEOUT status";
+                            "Producer collect task timeout. Supplier automatically set to TIMEOUT status";
                     }
                     taskQuery.set(sqlUpdateData);
                     return [4 /*yield*/, taskQuery.execute()];
@@ -910,7 +910,7 @@ function getTasksForProducerDB(producerConfig, securityKey) {
                 case 5: return [4 /*yield*/, repo.find(query)];
                 case 6:
                     // if securityKey is empty, this means it is on-primse mode, if a request was sent by UI Server, it always contains a securityKey, only if this request is directly sent to
-                    // DIA-Engine, then it possible don't have securityKey, in this mode, then it should be able to get all permissions tasks since they are belong to same user
+                    // BitSky-Supplier, then it possible don't have securityKey, in this mode, then it should be able to get all permissions tasks since they are belong to same user
                     tasks = _a.sent();
                     _a.label = 7;
                 case 7: return [3 /*break*/, 16];
@@ -973,7 +973,7 @@ function getTasksForProducerDB(producerConfig, securityKey) {
                 case 14: return [4 /*yield*/, taskQuery.getMany()];
                 case 15:
                     // if securityKey is empty, this means it is on-primse mode, if a request was sent by UI Server, it always contains a securityKey, only if this request is directly sent to
-                    // DIA-Engine, then it possible don't have securityKey, in this mode, then it should be able to get all permissions tasks since they are belong to same user
+                    // BitSky-Supplier, then it possible don't have securityKey, in this mode, then it should be able to get all permissions tasks since they are belong to same user
                     tasks = _a.sent();
                     _a.label = 16;
                 case 16:
