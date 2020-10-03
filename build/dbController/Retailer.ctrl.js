@@ -44,11 +44,14 @@ var logger = require("../util/logger");
 var HTTPError = require("../util/error").HTTPError;
 function flattenToObject(retailers) {
     function toObject(retailer) {
+        if (!retailer) {
+            return retailer;
+        }
         var obj = {};
-        obj.globalId = retailer.global_id;
-        obj.name = retailer.name;
+        obj.globalId = _.get(retailer, "global_id");
+        obj.name = _.get(retailer, "name");
         // obj.description = retailer.description;
-        obj.baseURL = retailer.base_url;
+        obj.baseURL = _.get(retailer, "base_url");
         if (_.get(retailer, "callback_method")) {
             !obj.callback ? (obj.callback = {}) : "";
             obj.callback.method = retailer.callback_method;
@@ -290,7 +293,9 @@ function getRetailerByGlobalIdDB(gid, securityKey) {
                     return [2 /*return*/, retailer];
                 case 2:
                     err_4 = _a.sent();
-                    error = new HTTPError(500, err_4, {}, "00005000001", "Retailer.ctrl->getRetailerByGlobalIdDB");
+                    error = new HTTPError(404, err_4, {
+                        globalId: gid
+                    }, "00004040001", gid, securityKey);
                     logger.error("getRetailerByGlobalIdDB, error:" + error.message, { error: error });
                     throw error;
                 case 3: return [2 /*return*/];
