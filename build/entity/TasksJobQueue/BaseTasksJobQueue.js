@@ -43,6 +43,10 @@ var BaseTasksJobQueue = /** @class */ (function (_super) {
         typeorm_1.Column(),
         __metadata("design:type", String)
     ], BaseTasksJobQueue.prototype, "producer_global_id", void 0);
+    __decorate([
+        typeorm_1.Column(),
+        __metadata("design:type", Number)
+    ], BaseTasksJobQueue.prototype, "timestamp", void 0);
     return BaseTasksJobQueue;
 }(Base));
 exports.BaseTasksJobQueue = BaseTasksJobQueue;

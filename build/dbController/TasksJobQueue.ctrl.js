@@ -44,13 +44,15 @@ var HTTPError = require("../util/error").HTTPError;
 var dbConfiguration_1 = require("../util/dbConfiguration");
 function addATaskJob(globalId, producerGlobalId) {
     return __awaiter(this, void 0, void 0, function () {
-        var repo, job, err_1, error;
+        var repo, timestamp, job, err_1, error;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     repo = typeorm_1.getRepository(TasksJobQueue_1.default);
+                    timestamp = Date.now();
                     return [4 /*yield*/, repo.save({
+                            timestamp: timestamp,
                             global_id: globalId,
                             producer_global_id: producerGlobalId,
                         })];
@@ -83,7 +85,7 @@ function getTopTaskJob() {
                     repo = _a.sent();
                     query = {
                         $query: {},
-                        $orderby: { created_at: 1, _id: 1 },
+                        $orderby: { timestamp: 1, _id: 1 },
                     };
                     return [4 /*yield*/, repo.findOne(query)];
                 case 2:
@@ -92,7 +94,7 @@ function getTopTaskJob() {
                 case 3: return [4 /*yield*/, typeorm_1.getRepository(TasksJobQueue_1.default)
                         .createQueryBuilder()
                         .orderBy({
-                        created_at: "ASC",
+                        timestamp: "ASC",
                         id: "ASC",
                     })
                         .getOne()];
@@ -119,25 +121,40 @@ function removeTimeoutJob() {
                 case 0:
                     _a.trys.push([0, 5, , 6]);
                     timeoutCreatedAt = Date.now() - getConfig("TASK_JOB_TIMEOUT") * 1.1;
-                    timeoutCreatedAt = new Date(timeoutCreatedAt).toISOString();
+                    // timeoutCreatedAt = new Date(timeoutCreatedAt).toISOString();
                     logger.info("Remove all task jobs created before " + timeoutCreatedAt, {
                         function: "removeTimeoutJob",
                     });
                     if (!dbConfiguration_1.isMongo()) return [3 /*break*/, 2];
                     return [4 /*yield*/, typeorm_1.getMongoRepository(TasksJobQueue_1.default).deleteMany({
-                            created_at: {
-                                $lt: new Date(timeoutCreatedAt),
+                            timestamp: {
+                                $lt: timeoutCreatedAt,
                             },
                         })];
                 case 1:
                     _a.sent();
                     return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, typeorm_1.getRepository(TasksJobQueue_1.default)
+                case 2: 
+                // const taskQuery = await getRepository(
+                //   TasksJobQueue
+                // ).createQueryBuilder("task");
+                // taskQuery.where("timestamp < :timeoutCreatedAt", { timeoutCreatedAt });
+                // const tasks = await taskQuery.getMany();
+                // console.log('=====>>> need to delete tasks: ', tasks);
+                // console.log('=====>>> timeoutCreatedAt: ', timeoutCreatedAt);
+                return [4 /*yield*/, typeorm_1.getRepository(TasksJobQueue_1.default)
                         .createQueryBuilder()
                         .delete()
-                        .where("created_at < :timeoutCreatedAt", { timeoutCreatedAt: timeoutCreatedAt })
+                        .where("timestamp < :timeoutCreatedAt", { timeoutCreatedAt: timeoutCreatedAt })
                         .execute()];
                 case 3:
+                    // const taskQuery = await getRepository(
+                    //   TasksJobQueue
+                    // ).createQueryBuilder("task");
+                    // taskQuery.where("timestamp < :timeoutCreatedAt", { timeoutCreatedAt });
+                    // const tasks = await taskQuery.getMany();
+                    // console.log('=====>>> need to delete tasks: ', tasks);
+                    // console.log('=====>>> timeoutCreatedAt: ', timeoutCreatedAt);
                     _a.sent();
                     _a.label = 4;
                 case 4: return [3 /*break*/, 6];
