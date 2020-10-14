@@ -35,7 +35,7 @@ function getDBConfiguration() {
         var dbType = "sql";
         configuration = __assign(__assign({}, constants.DEFAULT_DB_CONFIG), configuration);
         if (configuration.type == constants.DEFAULT_SQLITE.type) {
-            configuration.database = getConfig('TYPEORM_DATABASE');
+            configuration.database = getConfig('TYPEORM_DATABASE') || constants.DEFAULT_SQLITE.database;
             configuration.entities = [
                 path.join(__dirname, "../entity/**/*.common.js"),
                 path.join(__dirname, "../entity/**/*.sql.js"),

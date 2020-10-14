@@ -23,47 +23,30 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var typeorm_1 = require("typeorm");
-var uuidv4 = require("uuid/v4");
-var Base = /** @class */ (function () {
-    function Base() {
-        this.global_id = uuidv4();
+var dbConfiguration_1 = require("../../util/dbConfiguration");
+var Base_1 = require("../Base");
+var Base;
+if (dbConfiguration_1.isMongo()) {
+    Base = Base_1.BaseMongo;
+}
+else {
+    Base = Base_1.BaseSQL;
+}
+// This reference to 'schemas/retailer.json'
+// Will use JSON schema to validation
+var BaseTasksJobQueue = /** @class */ (function (_super) {
+    __extends(BaseTasksJobQueue, _super);
+    function BaseTasksJobQueue() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     __decorate([
         typeorm_1.Column(),
         __metadata("design:type", String)
-    ], Base.prototype, "global_id", void 0);
+    ], BaseTasksJobQueue.prototype, "producer_global_id", void 0);
     __decorate([
-        typeorm_1.CreateDateColumn(),
-        __metadata("design:type", String)
-    ], Base.prototype, "created_at", void 0);
-    __decorate([
-        typeorm_1.UpdateDateColumn(),
-        __metadata("design:type", String)
-    ], Base.prototype, "modified_at", void 0);
-    return Base;
-}());
-exports.Base = Base;
-var BaseMongo = /** @class */ (function (_super) {
-    __extends(BaseMongo, _super);
-    function BaseMongo() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    __decorate([
-        typeorm_1.ObjectIdColumn(),
-        __metadata("design:type", typeorm_1.ObjectID)
-    ], BaseMongo.prototype, "id", void 0);
-    return BaseMongo;
-}(Base));
-exports.BaseMongo = BaseMongo;
-var BaseSQL = /** @class */ (function (_super) {
-    __extends(BaseSQL, _super);
-    function BaseSQL() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    __decorate([
-        typeorm_1.PrimaryGeneratedColumn(),
+        typeorm_1.Column(),
         __metadata("design:type", Number)
-    ], BaseSQL.prototype, "id", void 0);
-    return BaseSQL;
+    ], BaseTasksJobQueue.prototype, "timestamp", void 0);
+    return BaseTasksJobQueue;
 }(Base));
-exports.BaseSQL = BaseSQL;
+exports.BaseTasksJobQueue = BaseTasksJobQueue;
