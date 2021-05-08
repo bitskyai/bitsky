@@ -27,7 +27,7 @@
     "semver": "^6.2.0",
     "server-destroy": "^1.0.1",
     "sqlite3": "^4.1.0",
-    "typeorm": "^0.2.20",
+    "typeorm": "^0.2.25",
     "uuid": "^3.3.2",
     "validator": "^10.11.0",
     "winston": "^3.2.1",
